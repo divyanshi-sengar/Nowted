@@ -32,10 +32,7 @@ const Form = () => {
             </button>
 
             {/* Close Button */}
-            <button
-              onClick={() => setForm(false)}
-              className="text-gray-400 text-sm hover:text-white"
-            >
+            <button >
               Cancel
             </button>
 

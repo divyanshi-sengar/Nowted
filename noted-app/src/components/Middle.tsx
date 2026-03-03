@@ -5,13 +5,26 @@ interface MiddleProps {
   refreshKey: number;
 }
 
+interface Note {
+  id: string;
+  title: string;
+  preview: string;
+  createdAt: string;
+  folderId: string;
+  folder?: {
+    id: string;
+    name: string;
+  };
+  isArchived: boolean;
+}
+
 const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
-  const { folderId } = useParams();
+  const { folderId } = useParams<{ folderId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [notes, setNotes] = useState<any[]>([]);
-  const [folderName, setFolderName] = useState("Folder"); // default folder name
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [folderName, setFolderName] = useState<string>("Folder"); // default folder name
 
   const isArchivedView = location.pathname.startsWith("/archived");
 
@@ -29,10 +42,10 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
           return;
         }
 
-        const data = await response.json();
-        const allNotes = Array.isArray(data.notes) ? data.notes : [];
+        const data :{ notes: Note[] }  = await response.json();
+        const allNotes:Note[] = Array.isArray(data.notes) ? data.notes : [];
 
-        let filteredNotes = [];
+        let filteredNotes:Note[] = [];
 
         if (isArchivedView) {
           // Show only archived notes

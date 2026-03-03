@@ -1,15 +1,29 @@
-import React,{useContext} from "react";
+import React, { useContext, useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+
 import calendar from '../images/calendar-icon.svg'
 import simpfolder from '../images/simp-folder.svg'
 import dots from '../images/dots.svg'
-import { useState, useEffect } from "react";
 import archieved from '../images/archieved.svg'
 import favourite from '../images/favourite.svg'
 import deleteicon from '../images/deleteicon.svg';
-import { useNavigate } from "react-router-dom";
+
+
 import { NotesContext } from "../context/NotesContext";
 
-import { useParams } from "react-router-dom";
+interface Note {
+  id: string;
+  title: string;
+  content: string;
+  preview?: string;
+  createdAt: string;
+  folder: {
+    id: string;
+    name: string;
+  };
+  isArchived?: boolean;
+  isFavorite?: boolean;
+}
 
 interface FullNoteProps {
   setRefreshKey: React.Dispatch<React.SetStateAction<number>>;
@@ -17,23 +31,19 @@ interface FullNoteProps {
 
 const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
 
-  const { noteId, folderId } = useParams();
-
+  const { noteId, folderId } = useParams<{ noteId: string; folderId: string }>();
   const navigate = useNavigate();
+
   const { toggleRefresh } = useContext(NotesContext);
 
   const [showMenu, setShowMenu] = useState(false);
-
-  // const { noteId } = useParams();
   const [note, setNote] = useState<Note | null>(null);
 
   useEffect(() => {
     const handleClickOutside = () => {
       setShowMenu(false);
     };
-
     window.addEventListener("click", handleClickOutside);
-
     return () => {
       window.removeEventListener("click", handleClickOutside);
     };
@@ -48,7 +58,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
           `https://nowted-server.remotestate.com/notes/${noteId}`
         );
 
-        const data = await response.json();
+        const data: { note: Note } = await response.json();
         // console.log(data)
         setNote(data.note);
       } catch (error) {
@@ -62,30 +72,30 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
 
 
   const handleArchive = async () => {
-  if (!noteId) return;
+    if (!noteId) return;
 
-  try {
-    // Archive the note
-    await fetch(`https://nowted-server.remotestate.com/notes/${noteId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isArchived: true }),
-    });
+    try {
+      // Archive the note
+      await fetch(`https://nowted-server.remotestate.com/notes/${noteId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isArchived: true }),
+      });
 
-    // Refresh Middle pane
-    setRefreshKey(prev => prev + 1);
+      // Refresh Middle pane
+      setRefreshKey(prev => prev + 1);
 
-    // Navigate Right Pane to Note component in the same folder
-    if (folderId) {
-      navigate(`/folders/${folderId}`); // Middle remains in the same folder
-    } else {
-      navigate("/"); // fallback home
+      // Navigate Right Pane to Note component in the same folder
+      if (folderId) {
+        navigate(`/folders/${folderId}`);
+      } else {
+        navigate("/");
+      }
+    } catch (err) {
+      console.error("Error archiving note:", err);
     }
+  };
 
-  } catch (err) {
-    console.error("Error archiving note:", err);
-  }
-};
   return (
     <div className="font-['Source_Sans_Pro']">
       <div className="p-12 flex flex-col gap-4">

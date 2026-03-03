@@ -2,12 +2,27 @@ import React from 'react'
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from "react-router-dom";
 
+interface Note {
+    id: string;
+    title: string;
+    preview: string;
+    createdAt: string;
+    folder: {
+        id: string;
+        name: string;
+    };
+}
+
+interface NotesResponse {
+    notes: Note[];
+}
+
 const ArchieveNotes: React.FC = () => {
 
-    const [notes, setNotes] = useState([]);
-    const [folderName, setFolderName] = useState("");
+    const [notes, setNotes] = useState<Note[]>([]);
+    const [folderName, setFolderName] = useState<string>("");
 
-    const { folderId } = useParams();
+    const { folderId } = useParams<{ folderId: string }>();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -18,7 +33,7 @@ const ArchieveNotes: React.FC = () => {
                 const response = await fetch(
                     `https://nowted-server.remotestate.com/notes?folderId=${folderId}&isArchived=true`
                 );
-                const data = await response.json();
+                const data: NotesResponse = await response.json();
                 // console.log(users);
                 setNotes(data.notes);
 
@@ -38,7 +53,7 @@ const ArchieveNotes: React.FC = () => {
                 {folderName}
             </div>
 
-            {notes.map((note: any) => (
+            {notes.map((note) => (
                 <div
                     key={note.id}
                     onClick={() =>
@@ -60,9 +75,6 @@ const ArchieveNotes: React.FC = () => {
                     </div>
                 </div>
             ))}
-            {/* {notes.length === 0 && (
-                <p className="text-gray-400 mt-5">No archived notes in this folder.</p>
-            )} */}
         </div>
     );
 };

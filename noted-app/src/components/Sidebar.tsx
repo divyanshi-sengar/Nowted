@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import "./Sidebar.css"
-import './Form'
+// import './Form'
 
 import archieved from '../images/archieved.svg';
 import newfolder from '../images/create-folder.svg';
@@ -22,26 +22,21 @@ interface Folder {
   deletedAt?: string | null
 }
 
-// interface SidebarProps {
-//   middleView: "notes" | "archived";
-//   setMiddleView: React.Dispatch<
-//     React.SetStateAction<"notes" | "archived">
-//   >;
-// }
-
-
+interface RecentNote {
+  id: string;
+  title: string;
+  folder: {
+    id: string;
+    name: string;
+  };
+}
 
 const Sidebar: React.FC = () => {
-  // const navigate = useNavigate();
-
-  const [folderName, setFolderName] = useState('');
-  const [allFolders, setAllFolders] = useState<Folder[]>([]);
-  const [visibleFolders, setVisibleFolders] = useState<Folder[]>([]);
+  const [folderName, setFolderName] = useState<string>('');
   const [showInput, setShowInput] = useState(false);
-  // const [notes, setNotes] = useState([]);
   const [folder, setFolder] = useState<Folder[]>([]);
-  const [recents, setrecent] = useState<Folder[]>([]);
-  const [form, setForm] = useState(false);
+  const [recents, setrecent] = useState<RecentNote[]>([]);
+  const [form, setForm] = useState<boolean>(false);
 
   const navigate = useNavigate();
 
@@ -54,7 +49,6 @@ const Sidebar: React.FC = () => {
         const users = await response.json();
         // console.log(users.folders);
         setFolder(users.folders);
-        setAllFolders(users.folders);
       } catch (err) {
         alert("Error fetching folders");
         console.log(err);
@@ -63,7 +57,7 @@ const Sidebar: React.FC = () => {
     getFolders();
   }, []);
 
-  // get recent ote
+  // get recent note
 
   useEffect(() => {
     async function getRecentNotes() {
@@ -74,8 +68,7 @@ const Sidebar: React.FC = () => {
         const users = await response.json();
         // console.log(users.recentNotes.title);
         setrecent(users.recentNotes)
-        console.log(users.recentNotes);
-        // console.log(recents)
+        // console.log(users.recentNotes);
       } catch (err) {
         alert("Error fetching folders");
         console.log(err);
@@ -108,6 +101,8 @@ const Sidebar: React.FC = () => {
     }
   };
 
+  // create folders
+
   const createFolder = async () => {
     if (!folderName.trim()) return;
 
@@ -130,7 +125,6 @@ const Sidebar: React.FC = () => {
 
       // Reset input
       setFolderName("");
-      setShowInput(false);
 
     } catch (error) {
       console.log("Error creating folder", error);
@@ -174,11 +168,10 @@ const Sidebar: React.FC = () => {
       <div className="mb-5">
         <p className="text-sm text-white font-semibold mb-1">Recents</p>
         <ul className="list-none p-0 m-0">
-          {recents.map((note: any) => (
+          {recents.map((note) => (
             <li
               key={note.id}
               onClick={() => {
-                // setMiddleView("notes");   // ✅ ADD THIS
                 navigate(`/folders/${note.folder.id}/notes/${note.id}`);
               }}
               className="flex items-center gap-[10px] leading-[1.8] font-semibold text-base px-[10px] py-[6px] rounded cursor-pointer hover:bg-[#312EB5]"
@@ -224,13 +217,9 @@ const Sidebar: React.FC = () => {
             </li>
           )}
 
-          <li className="flex items-center gap-[10px] leading-[1.8] font-semibold text-base px-[10px] py-[6px] rounded cursor-pointer hover:bg-[#1f1f1f] hover:text-white">
-            <img src={foldericon} alt="" />
-            Personal
-          </li>
 
           {folder
-            .filter(f => f.deletedAt === null)  // only show active folders
+            .filter(f => f.deletedAt === null) 
             .map((item) => (
               <li
                 key={item.id}
@@ -270,9 +259,7 @@ const Sidebar: React.FC = () => {
           </li>
           <li className="flex items-center gap-[10px] leading-[1.8] font-semibold text-base px-[10px] py-[6px] rounded cursor-pointer hover:bg-[#1f1f1f]"
             onClick={() => {
-              // setMiddleView("archived");
               navigate("/archived");
-              // navigate("/folders/dummy"); // create separate route
             }}
           >
 
