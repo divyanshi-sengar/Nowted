@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import "./Sidebar.css"
 import './Form'
 
@@ -13,7 +14,6 @@ import trash from '../images/trash.svg';
 import pen from '../images/Vector.svg';
 import search from '../images/Frame (1).svg';
 
-
 interface Folder {
   id: string;
   name: string;
@@ -22,11 +22,21 @@ interface Folder {
   deletedAt?: string | null
 }
 
+// interface SidebarProps {
+//   middleView: "notes" | "archived";
+//   setMiddleView: React.Dispatch<
+//     React.SetStateAction<"notes" | "archived">
+//   >;
+// }
 
 
-const Sidebar = () => {
+
+const Sidebar: React.FC = () => {
+  // const navigate = useNavigate();
 
   const [folderName, setFolderName] = useState('');
+  const [allFolders, setAllFolders] = useState<Folder[]>([]);
+  const [visibleFolders, setVisibleFolders] = useState<Folder[]>([]);
   const [showInput, setShowInput] = useState(false);
   // const [notes, setNotes] = useState([]);
   const [folder, setFolder] = useState<Folder[]>([]);
@@ -34,6 +44,26 @@ const Sidebar = () => {
   const [form, setForm] = useState(false);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    async function getFolders() {
+      try {
+        const response = await fetch(
+          "https://nowted-server.remotestate.com/folders"
+        );
+        const users = await response.json();
+        // console.log(users.folders);
+        setFolder(users.folders);
+        setAllFolders(users.folders);
+      } catch (err) {
+        alert("Error fetching folders");
+        console.log(err);
+      }
+    }
+    getFolders();
+  }, []);
+
+  // get recent ote
 
   useEffect(() => {
     async function getRecentNotes() {
@@ -53,6 +83,30 @@ const Sidebar = () => {
     }
     getRecentNotes()
   }, []);
+
+  // Delete folder
+
+  const deleteFolder = async (folderId: string) => {
+    try {
+      const response = await fetch(
+        `https://nowted-server.remotestate.com/folders/${folderId}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to delete folder");
+
+      console.log("Folder archived successfully");
+
+      // Update folder list after deletion
+      setFolder(prev => prev.map(f =>
+        f.id === folderId ? { ...f, deletedAt: new Date().toISOString() } : f
+      ));
+    } catch (err) {
+      console.error("Error deleting folder:", err);
+    }
+  };
 
   const createFolder = async () => {
     if (!folderName.trim()) return;
@@ -83,22 +137,8 @@ const Sidebar = () => {
     }
   };
 
-  useEffect(() => {
-    async function getFolders() {
-      try {
-        const response = await fetch(
-          "https://nowted-server.remotestate.com/folders"
-        );
-        const users = await response.json();
-        // console.log(users.folders);
-        setFolder(users.folders);
-      } catch (err) {
-        alert("Error fetching folders");
-        console.log(err);
-      }
-    }
-    getFolders();
-  }, []);
+  // archieve note folder
+
 
   return (
     <div className="h-full bg-[#121212] text-gray-300 p-5 flex flex-col">
@@ -137,9 +177,10 @@ const Sidebar = () => {
           {recents.map((note: any) => (
             <li
               key={note.id}
-              onClick={() =>
-                navigate(`/folders/${note.folder.id}/notes/${note.id}`)
-              }
+              onClick={() => {
+                // setMiddleView("notes");   // ✅ ADD THIS
+                navigate(`/folders/${note.folder.id}/notes/${note.id}`);
+              }}
               className="flex items-center gap-[10px] leading-[1.8] font-semibold text-base px-[10px] py-[6px] rounded cursor-pointer hover:bg-[#312EB5]"
             >
               <img src={document} alt="" />
@@ -188,16 +229,30 @@ const Sidebar = () => {
             Personal
           </li>
 
-          {folder.map((item) => (
-            <li
-              key={item.id}
-              onClick={() => navigate(`/folders/${item.id}`)}
-              className="flex items-center gap-[10px] leading-[1.8] font-semibold text-base px-[10px] py-[6px] rounded cursor-pointer hover:bg-[#1f1f1f] hover:text-white"
-            >
-              <img src={simpfolder} alt="" />
-              {item.name}
-            </li>
-          ))}
+          {folder
+            .filter(f => f.deletedAt === null)  // only show active folders
+            .map((item) => (
+              <li
+                key={item.id}
+                onClick={() => navigate(`/folders/${item.id}`)}
+                className="flex items-center justify-between px-[10px] py-[6px] rounded cursor-pointer hover:bg-[#1f1f1f] hover:text-white"
+              >
+                <div className="flex items-center gap-[10px]">
+                  <img src={simpfolder} alt="" />
+                  <span className="font-semibold text-base leading-[1.8]">{item.name}</span>
+                </div>
+
+                <img
+                  src={trash}
+                  alt="Delete"
+                  className="cursor-pointer"
+                  onClick={(e) => {
+                    e.stopPropagation(); // prevent navigation
+                    deleteFolder(item.id);
+                  }}
+                />
+              </li>
+            ))}
         </ul>
       </div>
 
@@ -213,57 +268,70 @@ const Sidebar = () => {
             <img src={trash} alt="" />
             Trash
           </li>
-          <li className="flex items-center gap-[10px] leading-[1.8] font-semibold text-base px-[10px] py-[6px] rounded cursor-pointer hover:bg-[#1f1f1f]">
+          <li className="flex items-center gap-[10px] leading-[1.8] font-semibold text-base px-[10px] py-[6px] rounded cursor-pointer hover:bg-[#1f1f1f]"
+            onClick={() => {
+              // setMiddleView("archived");
+              navigate("/archived");
+              // navigate("/folders/dummy"); // create separate route
+            }}
+          >
+
             <img src={archieved} alt="" />
             Archived Notes
           </li>
         </ul>
       </div>
 
-      {form && (
-        <div className="fixed inset-0 backdrop-blur-[1px] flex items-center justify-center">
-          <div className="bg-[#1f1f1f] w-[400px] p-8 rounded-xl shadow-lg flex flex-col gap-6">
+      {
+        form && (
+          <div className="fixed inset-0 backdrop-blur-[1px] flex items-center justify-center">
+            <div className="bg-[#1f1f1f] w-[400px] p-8 rounded-xl shadow-lg flex flex-col gap-6">
 
-            <h2 className="text-white text-2xl font-semibold text-center">
-              Add Note
-            </h2>
+              <h2 className="text-white text-2xl font-semibold text-center">
+                Add Note
+              </h2>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-gray-300 text-sm">Title</label>
-              <input
-                type="text"
-                placeholder="Enter note title"
-                className="bg-[#2a2a2a] text-white px-3 py-2 rounded-md outline-none"
-              />
+              <div className="flex flex-col gap-2">
+                <label className="text-gray-300 text-sm">Title</label>
+                <input
+                  type="text"
+                  placeholder="Enter note title"
+                  className="bg-[#2a2a2a] text-white px-3 py-2 rounded-md outline-none"
+                />
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <label className="text-gray-300 text-sm">Description</label>
+                <textarea
+                  rows={4}
+                  placeholder="Enter note description"
+                  className="bg-[#2a2a2a] text-white px-3 py-2 rounded-md outline-none resize-none"
+                />
+              </div>
+
+              <button
+                className="bg-[#312EB5] hover:bg-[#2623a0] text-white py-2 rounded-md font-semibold transition duration-300">
+                Add Note
+              </button>
+
+              {/* Close Button */}
+              <button
+                onClick={() => setForm(false)}
+                className="text-gray-400 text-sm hover:text-white"
+              >
+                Cancel
+              </button>
+
             </div>
-
-            <div className="flex flex-col gap-2">
-              <label className="text-gray-300 text-sm">Description</label>
-              <textarea
-                rows={4}
-                placeholder="Enter note description"
-                className="bg-[#2a2a2a] text-white px-3 py-2 rounded-md outline-none resize-none"
-              />
-            </div>
-
-            <button
-              className="bg-[#312EB5] hover:bg-[#2623a0] text-white py-2 rounded-md font-semibold transition duration-300">
-              Add Note
-            </button>
-
-            {/* Close Button */}
-            <button
-              onClick={() => setForm(false)}
-              className="text-gray-400 text-sm hover:text-white"
-            >
-              Cancel
-            </button>
-
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 };
 
+
 export default Sidebar;
+
+
+

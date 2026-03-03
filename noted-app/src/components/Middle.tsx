@@ -1,70 +1,107 @@
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
 
-const Middle: React.FC = () => {
+interface MiddleProps {
+  refreshKey: number;
+}
 
-  const [notes, setNotes] = useState([]);
-  const [folderName, setFolderName] = useState("");
-
-  const navigate = useNavigate();
+const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
   const { folderId } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [notes, setNotes] = useState<any[]>([]);
+  const [folderName, setFolderName] = useState("Folder"); // default folder name
+
+  const isArchivedView = location.pathname.startsWith("/archived");
 
   useEffect(() => {
-    if (!folderId) return;
-
-    async function getFolder() {
+    const fetchNotes = async () => {
       try {
         const response = await fetch(
-          `https://nowted-server.remotestate.com/notes?folderId=${folderId}`
+          "https://nowted-server.remotestate.com/notes?limit=1000"
         );
-        const users = await response.json();
-        // console.log(users);
-        setNotes(users.notes);
 
-        if (users.notes.length > 0) {
-          setFolderName(users.notes[0].folder.name);
-        } else {
-          setFolderName("Empty Folder");
+        if (!response.ok) {
+          console.error("Failed to fetch notes", response.status, response.statusText);
+          setNotes([]);
+          setFolderName(isArchivedView ? "Archived Notes" : "No Notes in Folder");
+          return;
         }
 
+        const data = await response.json();
+        const allNotes = Array.isArray(data.notes) ? data.notes : [];
+
+        let filteredNotes = [];
+
+        if (isArchivedView) {
+          // Show only archived notes
+          filteredNotes = allNotes.filter(note => note.isArchived);
+          setFolderName("Archived Notes");
+        } else if (folderId) {
+          // Show only notes in current folder, excluding archived
+          filteredNotes = allNotes.filter(
+            note => note.folderId === folderId && !note.isArchived
+          );
+
+          // Always get folder name from folder object
+          const folderFromNotes = allNotes.find(n => n.folderId === folderId)?.folder;
+          setFolderName(folderFromNotes?.name || "No Notes in Folder");
+        } else {
+          filteredNotes = [];
+          setFolderName("No Notes");
+        }
+
+        setNotes(filteredNotes);
       } catch (err) {
-        alert("Error fetching folders");
-        console.log(err);
+        console.error("Error fetching notes:", err);
+        setNotes([]);
+        setFolderName(isArchivedView ? "Archived Notes" : "No Notes in Folder");
       }
-    }
-    getFolder();
-  }, [folderId])
+    };
+
+    fetchNotes();
+  }, [folderId, refreshKey, location.pathname]);
 
   return (
-    <div className="p-5 min-h-full bg-[#1c1c1c] flex flex-col gap-5">
-      <div className="text-[22px] font-semibold text-white">
-        {folderName}
+  <div className="p-5 h-full bg-[#1c1c1c] flex flex-col gap-5">
+    {/* Folder Name */}
+    <div className="text-[22px] font-semibold text-white shrink-0">{folderName}</div>
+
+    {/* No Notes Message */}
+    {notes.length === 0 && (
+      <div className="text-gray-400 flex-1 flex items-center justify-center">
+        No Notes in this Folder
       </div>
+    )}
 
-      {notes.map((note: any) => (
-        <div
-          key={note.id}
-          onClick={() =>
-            navigate(`/folders/${folderId}/notes/${note.id}`)
-          }
-          className="bg-[#232323] rounded-[2px] p-5 flex flex-col gap-[15px]"
-        >
-          <div className="text-[18px] font-semibold leading-[28px] text-white">
-            <p className="m-0">{note.title || "Untitled"}</p>
+    {/* Notes List - Scrollable */}
+    {notes.length > 0 && (
+      <div className="flex-1 overflow-y-auto flex flex-col gap-5 pr-4">
+        {notes.map(note => (
+          <div
+            key={note.id}
+            onClick={() => {
+              if (isArchivedView) {
+                navigate(`/archived/notes/${note.id}`);
+              } else {
+                navigate(`/folders/${folderId}/notes/${note.id}`);
+              }
+            }}
+            className="bg-[#232323] rounded-[2px] p-5 flex flex-col gap-[15px] cursor-pointer hover:bg-[#2a2a2a] transition-colors"
+          >
+            <div className="text-[18px] font-semibold leading-[28px] text-white">
+              {note.title || "Untitled"}
+            </div>
+            <div className="flex gap-[10px] text-gray-400 text-sm">
+              <p>{new Date(note.createdAt).toLocaleDateString()}</p>
+              <span className="truncate">{note.preview}</span>
+            </div>
           </div>
-
-          <div className="flex gap-[10px] text-gray-400 text-sm">
-            <p className="m-0">
-              {new Date(note.createdAt).toLocaleDateString()}
-            </p>
-            <span className="truncate">
-              {note.preview}
-            </span>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};
-
+        ))}
+      </div>
+    )}
+  </div>
+);
+}
 export default Middle;

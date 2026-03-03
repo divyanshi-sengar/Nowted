@@ -1,17 +1,45 @@
-import React from "react";
+import React,{useContext} from "react";
 import calendar from '../images/calendar-icon.svg'
 import simpfolder from '../images/simp-folder.svg'
 import dots from '../images/dots.svg'
 import { useState, useEffect } from "react";
+import archieved from '../images/archieved.svg'
+import favourite from '../images/favourite.svg'
+import deleteicon from '../images/deleteicon.svg';
+import { useNavigate } from "react-router-dom";
+import { NotesContext } from "../context/NotesContext";
 
 import { useParams } from "react-router-dom";
 
-const FullNote: React.FC = () => {
+interface FullNoteProps {
+  setRefreshKey: React.Dispatch<React.SetStateAction<number>>;
+}
 
-  const { noteId } =useParams();
+const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
+
+  const { noteId, folderId } = useParams();
+
+  const navigate = useNavigate();
+  const { toggleRefresh } = useContext(NotesContext);
+
+  const [showMenu, setShowMenu] = useState(false);
+
+  // const { noteId } = useParams();
   const [note, setNote] = useState<Note | null>(null);
 
-   useEffect(() => {
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowMenu(false);
+    };
+
+    window.addEventListener("click", handleClickOutside);
+
+    return () => {
+      window.removeEventListener("click", handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!noteId) return;
 
     async function getNote() {
@@ -31,6 +59,33 @@ const FullNote: React.FC = () => {
     getNote();
   }, [noteId]);
 
+
+
+  const handleArchive = async () => {
+  if (!noteId) return;
+
+  try {
+    // Archive the note
+    await fetch(`https://nowted-server.remotestate.com/notes/${noteId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isArchived: true }),
+    });
+
+    // Refresh Middle pane
+    setRefreshKey(prev => prev + 1);
+
+    // Navigate Right Pane to Note component in the same folder
+    if (folderId) {
+      navigate(`/folders/${folderId}`); // Middle remains in the same folder
+    } else {
+      navigate("/"); // fallback home
+    }
+
+  } catch (err) {
+    console.error("Error archiving note:", err);
+  }
+};
   return (
     <div className="font-['Source_Sans_Pro']">
       <div className="p-12 flex flex-col gap-4">
@@ -41,14 +96,39 @@ const FullNote: React.FC = () => {
             {note?.title}
           </h1>
 
-          <button>
-            <img
-              src={dots}
-              alt="menu"
-              className="cursor-pointer"
-            />
-          </button>
+          {/* Wrap ONLY this section */}
+          <div className="relative">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMenu(!showMenu);
+              }}
+            >
+              <img src={dots} alt="menu" className="cursor-pointer" />
+            </button>
+
+            {showMenu && (
+              <div className="absolute right-0 top-full mt-2 w-52 bg-[#2b2b2b] rounded-md shadow-xl z-50 ">
+
+                <button className="flex items-center gap-3 px-4 py-3 hover:bg-[#3a3a3a] w-full text-left rounded-t-xl">
+                  <img src={favourite} alt="" /> Add to favorites
+                </button>
+
+                <button className="flex items-center gap-3 px-4 py-3 hover:bg-[#3a3a3a] w-full text-left " onClick={handleArchive}>
+                  <img src={archieved} alt="" /> Archived
+                </button>
+
+                <hr className="border-gray-600 opacity-40" />
+
+                <button className="flex items-center gap-3 px-4 py-3 hover:bg-red-600 hover:text-white w-full text-left text-red-400 rounded-b-xl">
+                  <img src={deleteicon} alt="" /> Delete
+                </button>
+
+              </div>
+            )}
+          </div>
         </div>
+
 
         {/* Middle Section */}
         <div className="flex flex-col gap-2 text-sm font-normal">
@@ -60,8 +140,8 @@ const FullNote: React.FC = () => {
               <p>Date</p>
             </div>
             <p className="underline">
-              { note?.createdAt && 
-              new Date(note.createdAt).toLocaleDateString("en-GB")}
+              {note?.createdAt &&
+                new Date(note.createdAt).toLocaleDateString("en-GB")}
             </p>
           </div>
 
