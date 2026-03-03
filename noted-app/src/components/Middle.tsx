@@ -5,116 +5,155 @@ interface MiddleProps {
   refreshKey: number;
 }
 
+interface Folder {
+  id: string;
+  name: string;
+}
+
 interface Note {
   id: string;
   title: string;
   preview: string;
-  createdAt: string;
   folderId: string;
-  folder?: {
-    id: string;
-    name: string;
-  };
+  folder: Folder;
   isArchived: boolean;
+  isFavorite: boolean;
+  createdAt: string;
+  updatedAt: string;
+  // deletedAt?: string | null;
 }
 
 const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
   const { folderId } = useParams<{ folderId: string }>();
+  const [loading, setLoading] = useState<boolean>(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   const [notes, setNotes] = useState<Note[]>([]);
-  const [folderName, setFolderName] = useState<string>("Folder"); // default folder name
 
-  const isArchivedView = location.pathname.startsWith("/archived");
+  const selectedNoteId = location.pathname.split("/").pop();
+
+  const isArchivedView = location.pathname === "/archived";
+  const isFavoriteView = location.pathname === "/favorites";
+  const isTrashView = location.pathname.startsWith("/trash");
 
   useEffect(() => {
     const fetchNotes = async () => {
       try {
-        const response = await fetch(
-          "https://nowted-server.remotestate.com/notes?limit=1000"
-        );
+        setLoading(true);
 
-        if (!response.ok) {
-          console.error("Failed to fetch notes", response.status, response.statusText);
+        let url = "";
+
+        if (isArchivedView) {
+          url =
+            "https://nowted-server.remotestate.com/notes?isArchived=true&limit=1000";
+        } else if (isFavoriteView) {
+          url =
+            "https://nowted-server.remotestate.com/notes?isFavorite=true&limit=1000";
+        } else if (folderId) {
+          url = `https://nowted-server.remotestate.com/notes?folderId=${folderId}&limit=1000`;
+        } else if (isTrashView) {
+          url =
+            "https://nowted-server.remotestate.com/notes?deleted=true&limit=1000";
+        } else {
           setNotes([]);
-          setFolderName(isArchivedView ? "Archived Notes" : "No Notes in Folder");
+          setLoading(false);
           return;
         }
 
-        const data :{ notes: Note[] }  = await response.json();
-        const allNotes:Note[] = Array.isArray(data.notes) ? data.notes : [];
+        const res = await fetch(url);
+        const data = await res.json();
 
-        let filteredNotes:Note[] = [];
+        const fetchedNotes: Note[] = Array.isArray(data.notes)
+          ? data.notes
+          : [];
 
-        if (isArchivedView) {
-          // Show only archived notes
-          filteredNotes = allNotes.filter(note => note.isArchived);
-          setFolderName("Archived Notes");
-        } else if (folderId) {
-          // Show only notes in current folder, excluding archived
-          filteredNotes = allNotes.filter(
-            note => note.folderId === folderId && !note.isArchived
-          );
+        // For folder view → remove archived notes
+        let filteredNotes = fetchedNotes;
 
-          // Always get folder name from folder object
-          const folderFromNotes = allNotes.find(n => n.folderId === folderId)?.folder;
-          setFolderName(folderFromNotes?.name || "No Notes in Folder");
-        } else {
-          filteredNotes = [];
-          setFolderName("No Notes");
+        //  Trash view → only deleted notes
+        if (isTrashView) {
+          filteredNotes = fetchedNotes.filter(note => note.isArchived);
+        }
+
+        //  Folder / Archive / Favorites → exclude deleted
+        if (!isTrashView) {
+          filteredNotes = filteredNotes.filter(note => !note.isArchived);
+        }
+
+        // Folder view → also exclude archived
+        if (folderId && !isArchivedView && !isFavoriteView) {
+          filteredNotes = filteredNotes.filter(note => !note.isArchived);
         }
 
         setNotes(filteredNotes);
-      } catch (err) {
-        console.error("Error fetching notes:", err);
+      } catch (error) {
+        console.error("Error fetching notes:", error);
         setNotes([]);
-        setFolderName(isArchivedView ? "Archived Notes" : "No Notes in Folder");
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchNotes();
-  }, [folderId, refreshKey, location.pathname]);
+  }, [folderId, location.pathname, refreshKey]);
+
+  const pageTitle = isArchivedView
+    ? "Archived Notes"
+    : isFavoriteView
+      ? "Favorite Notes"
+      : isTrashView
+        ? "Trash"
+        : "Folder Notes";
 
   return (
-  <div className="p-5 h-full bg-[#1c1c1c] flex flex-col gap-5">
-    {/* Folder Name */}
-    <div className="text-[22px] font-semibold text-white shrink-0">{folderName}</div>
+    <div className="p-5 h-full bg-[#1c1c1c] flex flex-col gap-5">
+      <div className="text-[22px] font-semibold text-white shrink-0">{pageTitle}</div>
 
-    {/* No Notes Message */}
-    {notes.length === 0 && (
-      <div className="text-gray-400 flex-1 flex items-center justify-center">
-        No Notes in this Folder
-      </div>
-    )}
+      {/* Loading */}
+      {loading && (
+        <p className="text-gray-400 text-sm">Loading notes...</p>
+      )}
 
-    {/* Notes List - Scrollable */}
-    {notes.length > 0 && (
-      <div className="flex-1 overflow-y-auto flex flex-col gap-5 pr-4">
-        {notes.map(note => (
-          <div
-            key={note.id}
-            onClick={() => {
-              if (isArchivedView) {
-                navigate(`/archived/notes/${note.id}`);
-              } else {
-                navigate(`/folders/${folderId}/notes/${note.id}`);
-              }
-            }}
-            className="bg-[#232323] rounded-[2px] p-5 flex flex-col gap-[15px] cursor-pointer hover:bg-[#2a2a2a] transition-colors"
-          >
-            <div className="text-[18px] font-semibold leading-[28px] text-white">
-              {note.title || "Untitled"}
-            </div>
-            <div className="flex gap-[10px] text-gray-400 text-sm">
-              <p>{new Date(note.createdAt).toLocaleDateString()}</p>
-              <span className="truncate">{note.preview}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-);
-}
+      {!loading && notes.length === 0 ? (
+        <div className="text-gray-400 flex-1 flex items-center justify-center">
+          No Notes
+        </div>
+      ) : (
+        <div className="flex-1 overflow-y-auto flex flex-col gap-5 pr-4">
+          {notes.map(note => {
+            const isSelected = selectedNoteId === note.id;
+            return (
+              <div
+                key={note.id}
+                onClick={() => {
+                  if (isArchivedView) {
+                    navigate(`/archived/notes/${note.id}`);
+                  } else if (isFavoriteView) {
+                    navigate(`/favorites/notes/${note.id}`);
+                  } else if (isTrashView) {
+                    navigate(`/trash/notes/${note.id}`);
+                  } else {
+                    navigate(`/folders/${folderId}/notes/${note.id}`);
+                  }
+                }}
+                className={`bg-[#232323] rounded-[2px] p-5 flex flex-col gap-[15px] cursor-pointer hover:bg-[#2a2a2a] transition-colors ${isSelected ? "border-l-4 border-blue-500" : ""
+                  }`}
+              >
+                <div className="text-[18px] font-semibold text-white">
+                  {note.title || "Untitled"}
+                </div>
+                <div className="flex gap-[10px] text-gray-400 text-sm">
+                  <p>{new Date(note.createdAt).toLocaleDateString()}</p>
+                  <span className="truncate">{note.preview}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default Middle;

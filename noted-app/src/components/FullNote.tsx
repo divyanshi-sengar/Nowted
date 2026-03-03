@@ -1,12 +1,12 @@
 import React, { useContext, useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 
 import calendar from '../images/calendar-icon.svg'
 import simpfolder from '../images/simp-folder.svg'
 import dots from '../images/dots.svg'
 import archieved from '../images/archieved.svg'
-import favourite from '../images/favourite.svg'
 import deleteicon from '../images/deleteicon.svg';
+import { Star } from "lucide-react";
 
 
 import { NotesContext } from "../context/NotesContext";
@@ -23,6 +23,7 @@ interface Note {
   };
   isArchived?: boolean;
   isFavorite?: boolean;
+  deletedAt?: string | null;
 }
 
 interface FullNoteProps {
@@ -31,13 +32,15 @@ interface FullNoteProps {
 
 const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
 
-  const { noteId, folderId } = useParams<{ noteId: string; folderId: string }>();
+  const { noteId, folderId } = useParams<{ noteId?: string; folderId?: string }>();
   const navigate = useNavigate();
 
   const { toggleRefresh } = useContext(NotesContext);
 
   const [showMenu, setShowMenu] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
+
+  const location = useLocation();
 
   useEffect(() => {
     const handleClickOutside = () => {
@@ -71,7 +74,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
 
 
 
-  const handleArchive = async () => {
+  const handleArchive = async (): Promise<void> => {
     if (!noteId) return;
 
     try {
@@ -82,10 +85,8 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
         body: JSON.stringify({ isArchived: true }),
       });
 
-      // Refresh Middle pane
       setRefreshKey(prev => prev + 1);
 
-      // Navigate Right Pane to Note component in the same folder
       if (folderId) {
         navigate(`/folders/${folderId}`);
       } else {
@@ -93,6 +94,69 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
       }
     } catch (err) {
       console.error("Error archiving note:", err);
+    }
+  };
+
+
+ const handleFavourite = async (): Promise<void> => {
+    if (!noteId || !note) return;
+
+    try {
+      await fetch(`https://nowted-server.remotestate.com/notes/${noteId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          isFavorite: !note.isFavorite,
+        }),
+      });
+
+      // Update local state instantly (UI update)
+      setNote(prev =>
+        prev ? { ...prev, isFavorite: !prev.isFavorite } : prev
+      );
+
+      // Refresh middle pane
+      setRefreshKey(prev => prev + 1);
+
+    } catch (err) {
+      console.error("Error updating favorite:", err);
+    }
+  };
+
+  // Delete button 
+
+  const handleDelete = async (): Promise<void> => {
+    if (!noteId) return;
+
+    try {
+      await fetch(
+        `https://nowted-server.remotestate.com/notes/${noteId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            isArchived: true,
+          }),
+        }
+      );
+
+      setRefreshKey(prev => prev + 1);
+
+      if (location.pathname.startsWith("/folders")) {
+        navigate(`/folders/${folderId}`);
+      }
+      else if (location.pathname.startsWith("/archived")) {
+        navigate("/archived");
+      }
+      else if (location.pathname.startsWith("/favorites")) {
+        navigate("/favorites");
+      }
+      else if (location.pathname.startsWith("/trash")) {
+        navigate("/trash");
+      }
+
+    } catch (err) {
+      console.error("Delete failed", err);
     }
   };
 
@@ -120,8 +184,19 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
             {showMenu && (
               <div className="absolute right-0 top-full mt-2 w-52 bg-[#2b2b2b] rounded-md shadow-xl z-50 ">
 
-                <button className="flex items-center gap-3 px-4 py-3 hover:bg-[#3a3a3a] w-full text-left rounded-t-xl">
-                  <img src={favourite} alt="" /> Add to favorites
+                <button
+                  onClick={handleFavourite}
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-[#3a3a3a] w-full text-left rounded-t-xl"
+                >
+                  <Star
+                    size={18}
+                    className={`transition-all ${note?.isFavorite
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-gray-400"
+                      }`}
+                  />
+
+                  {note?.isFavorite ? "Remove favorites" : "Add to favorites"}
                 </button>
 
                 <button className="flex items-center gap-3 px-4 py-3 hover:bg-[#3a3a3a] w-full text-left " onClick={handleArchive}>
@@ -130,7 +205,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
 
                 <hr className="border-gray-600 opacity-40" />
 
-                <button className="flex items-center gap-3 px-4 py-3 hover:bg-red-600 hover:text-white w-full text-left text-red-400 rounded-b-xl">
+                <button className="flex items-center gap-3 px-4 py-3 hover:bg-red-600 hover:text-white w-full text-left text-red-400 rounded-b-xl " onClick={handleDelete}>
                   <img src={deleteicon} alt="" /> Delete
                 </button>
 

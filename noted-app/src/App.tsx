@@ -31,6 +31,8 @@ const App: React.FC = () => {
             <Route path="/folders/:folderId/*" element={<Middle refreshKey={refreshKey} />} />
 
             <Route path="/archived/*" element={<Middle refreshKey={refreshKey} />} />
+            <Route path="/favorites" element={<Middle refreshKey={refreshKey} />} />
+            <Route path="/trash" element={<Middle refreshKey={refreshKey} />} />
           </Routes>
         </div>
 
@@ -49,6 +51,18 @@ const App: React.FC = () => {
               element={<FullNote setRefreshKey={setRefreshKey} />}
             />
             <Route path="/archived" element={<Note />} />
+            <Route path="/favorites" element={<Note />} />
+
+            <Route
+              path="/favorites/notes/:noteId"
+              element={<FullNote setRefreshKey={setRefreshKey} />}
+            />
+
+            <Route path="/trash" element={<Note />} />
+            <Route
+              path="/trash/notes/:noteId"
+              element={<FullNote setRefreshKey={setRefreshKey} />}
+            />
           </Routes>
         </div>
 

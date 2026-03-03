@@ -1,13 +1,10 @@
-// src/context/NotesContext.tsx
 import React, { createContext, useState, ReactNode, FC } from "react";
 
-// Define the shape of the context
 interface NotesContextType {
   refresh: boolean;
   toggleRefresh: () => void;
 }
 
-// Create context with default values
 export const NotesContext = createContext<NotesContextType>({
   refresh: false,
   toggleRefresh: () => {},

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+// import { useNavigate } from "react-router-dom";
 
 import "./Sidebar.css"
 // import './Form'
@@ -13,6 +14,7 @@ import simpfolder from '../images/simp-folder.svg';
 import trash from '../images/trash.svg';
 import pen from '../images/Vector.svg';
 import search from '../images/Frame (1).svg';
+import { Trash2 } from 'lucide-react';
 
 interface Folder {
   id: string;
@@ -38,8 +40,12 @@ const Sidebar: React.FC = () => {
   const [recents, setrecent] = useState<RecentNote[]>([]);
   const [form, setForm] = useState<boolean>(false);
 
+  const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
+  const [editedName, setEditedName] = useState<string>("");
+
   const navigate = useNavigate();
 
+  // Fetch Folders*************
   useEffect(() => {
     async function getFolders() {
       try {
@@ -48,7 +54,7 @@ const Sidebar: React.FC = () => {
         );
         const users = await response.json();
         // console.log(users.folders);
-        setFolder(users.folders);
+        setFolder(users.folders || []);
       } catch (err) {
         alert("Error fetching folders");
         console.log(err);
@@ -57,7 +63,7 @@ const Sidebar: React.FC = () => {
     getFolders();
   }, []);
 
-  // get recent note
+  // get recent note*****************
 
   useEffect(() => {
     async function getRecentNotes() {
@@ -77,7 +83,7 @@ const Sidebar: React.FC = () => {
     getRecentNotes()
   }, []);
 
-  // Delete folder
+  // Delete folder**************8
 
   const deleteFolder = async (folderId: string) => {
     try {
@@ -101,7 +107,7 @@ const Sidebar: React.FC = () => {
     }
   };
 
-  // create folders
+  // create folders**************
 
   const createFolder = async () => {
     if (!folderName.trim()) return;
@@ -131,8 +137,36 @@ const Sidebar: React.FC = () => {
     }
   };
 
-  // archieve note folder
+  // rename folder
 
+  const renameFolder = async (folderId: string) => {
+    if (!editedName.trim()) return;
+
+    try {
+      await fetch(
+        `https://nowted-server.remotestate.com/folders/${folderId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: editedName }),
+        }
+      );
+
+      setFolder(prev =>
+        prev.map(f =>
+          f.id === folderId ? { ...f, name: editedName } : f
+        )
+      );
+
+      setEditingFolderId(null);
+    } catch (error) {
+      console.error("Rename failed", error);
+    }
+  };
+
+  // const isFavorites = location.pathname.startsWith("/favorites");
+  // const isTrash = location.pathname.startsWith("/trash");
+  // const isArchived = location.pathname.startsWith("/archived");
 
   return (
     <div className="h-full bg-[#121212] text-gray-300 p-5 flex flex-col">
@@ -185,8 +219,9 @@ const Sidebar: React.FC = () => {
       </div>
 
       {/* Folders Section (Scrollable & scrollbar hidden) */}
+
       <div className="flex flex-col flex-1 min-h-0 mb-5 mt-2">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center px-2">
           <p className="text-sm text-white font-semibold mb-1">Folders</p>
           <button>
             <img
@@ -219,29 +254,63 @@ const Sidebar: React.FC = () => {
 
 
           {folder
-            .filter(f => f.deletedAt === null) 
-            .map((item) => (
-              <li
-                key={item.id}
-                onClick={() => navigate(`/folders/${item.id}`)}
-                className="flex items-center justify-between px-[10px] py-[6px] rounded cursor-pointer hover:bg-[#1f1f1f] hover:text-white"
-              >
-                <div className="flex items-center gap-[10px]">
-                  <img src={simpfolder} alt="" />
-                  <span className="font-semibold text-base leading-[1.8]">{item.name}</span>
-                </div>
+            .filter((f) => !f.deletedAt)
+            .map((item) => {
+              const isActive =
+                location.pathname.startsWith(`/folders/${item.id}`);
 
-                <img
-                  src={trash}
-                  alt="Delete"
-                  className="cursor-pointer"
-                  onClick={(e) => {
-                    e.stopPropagation(); // prevent navigation
-                    deleteFolder(item.id);
+              return (
+                <li
+                  key={item.id}
+                  onClick={() => {
+                    if (editingFolderId !== item.id) {
+                      navigate(`/folders/${item.id}`);
+                    }
                   }}
-                />
-              </li>
-            ))}
+                  onDoubleClick={() => {
+                    setEditingFolderId(item.id);
+                    setEditedName(item.name);
+                  }}
+                  className={`group flex items-center justify-between px-2 py-1 rounded cursor-pointer transition
+                    ${isActive ? "bg-[#1f1f1f]" : "hover:bg-[#1f1f1f]"}`}
+                >
+                  <div className="flex items-center gap-[10px] w-full [10px] py-[5px] ">
+                    <img
+                      src={isActive ? foldericon : simpfolder}
+                      className="transition-all duration-200"
+                    />
+
+                    {editingFolderId === item.id ? (
+                      <input
+                        autoFocus
+                        value={editedName}
+                        onChange={(e) => setEditedName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") renameFolder(item.id);
+                          if (e.key === "Escape")
+                            setEditingFolderId(null);
+                        }}
+                        className="bg-[#2a2a2a] text-white px-2 py-1 rounded outline-none w-full"
+                      />
+                    ) : (
+                      <span className="font-semibold truncate">
+                        {item.name}
+                      </span>
+                    )}
+                  </div>
+
+                  <Trash2
+                    className="w-5 h-5 cursor-pointer text-gray-400 
+             opacity-0 group-hover:opacity-100 
+             hover:text-red-500 transition duration-200"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteFolder(item.id);
+                    }}
+                  />
+                </li>
+              );
+            })}
         </ul>
       </div>
 
@@ -249,11 +318,11 @@ const Sidebar: React.FC = () => {
       <div>
         <p className="text-sm text-white font-semibold mb-1">More</p>
         <ul className="list-none p-0 m-0">
-          <li className="flex items-center gap-[10px] leading-[1.8] font-semibold text-base px-[10px] py-[6px] rounded cursor-pointer hover:bg-[#1f1f1f]">
+          <li className="flex items-center gap-[10px] leading-[1.8] font-semibold text-base px-[10px] py-[6px] rounded cursor-pointer hover:bg-[#1f1f1f]" onClick={() => navigate("/favorites")}>
             <img src={favourite} alt="" />
             Favorites
           </li>
-          <li className="flex items-center gap-[10px] leading-[1.8] font-semibold text-base px-[10px] py-[6px] rounded cursor-pointer hover:bg-[#1f1f1f]">
+          <li className="flex items-center gap-[10px] leading-[1.8] font-semibold text-base px-[10px] py-[6px] rounded cursor-pointer hover:bg-[#1f1f1f] " onClick={() => navigate("/trash")} >
             <img src={trash} alt="" />
             Trash
           </li>

@@ -31,7 +31,7 @@ const ArchieveNotes: React.FC = () => {
         async function getArchivedNotes() {
             try {
                 const response = await fetch(
-                    `https://nowted-server.remotestate.com/notes?folderId=${folderId}&isArchived=true`
+                    `https://nowted-server.remotestate.com/notes?&isArchived=true`
                 );
                 const data: NotesResponse = await response.json();
                 // console.log(users);
