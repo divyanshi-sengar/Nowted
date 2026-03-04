@@ -1,5 +1,6 @@
 import { useEffect, useState,useRef} from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+// import { NotesContext } from "../context/NotesContext";
 // import { useNavigate } from "react-router-dom";
 
 import "./Sidebar.css"
@@ -63,6 +64,8 @@ const Sidebar: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const debouncedQuery = useDebounce(searchQuery, 500);
 
+  // const { toggleRefresh } = useContext(NotesContext);
+
   const getCurrentFolderId = () => {
     const match = location.pathname.match(/\/folders\/([^/]+)/);
     return match ? match[1] : null;
@@ -117,6 +120,7 @@ const Sidebar: React.FC = () => {
 
       // Navigate 
       navigate(`/folders/${currentFolderId}/notes/${data.id}`);
+      // toggleRefresh();
 
     } catch (error) {
       console.error("Error creating note:", error);
