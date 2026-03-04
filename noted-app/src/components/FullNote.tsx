@@ -116,7 +116,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
 
         {/* Top Section */}
         <div className="flex justify-between items-center">
-          <h1 className="text-[32px] font-semibold">{note?.title}</h1>
+          <h1 className="text-[32px] font-semibold break-words whitespace-normal overflow-hidden">{note?.title}</h1>
 
           <div className="relative">
             <button onClick={e => { e.stopPropagation(); setShowMenu(!showMenu); }}>
@@ -168,7 +168,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
         </div>
 
         {/* Bottom Section */}
-        <div className="pt-2 text-base font-normal leading-7">
+        <div className="pt-2 text-base font-normal leading-7 break-words whitespace-pre-wrap overflow-hidden">
           <p>{note?.content}</p>
         </div>
 
@@ -177,4 +177,4 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
   );
 };
 
-export default FullNote;
+export default FullNote; 
