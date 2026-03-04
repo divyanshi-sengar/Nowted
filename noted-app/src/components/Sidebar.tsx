@@ -1,20 +1,30 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState,useRef} from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 // import { useNavigate } from "react-router-dom";
 
 import "./Sidebar.css"
+import { useDebounce } from "../hooks/useDebounce";
+import { searchNotes } from "../services/notesservies";
+import { highlightText } from "../utils/highlightText";
+
+import { Search, Plus } from "lucide-react";
 // import './Form'
 
 import archieved from '../images/archieved.svg';
 import newfolder from '../images/create-folder.svg';
-import document from '../images/document.svg';
+import documentIcon from '../images/document.svg';
 import favourite from '../images/favourite.svg';
 import foldericon from '../images/folder-icon.svg';
 import simpfolder from '../images/simp-folder.svg';
 import trash from '../images/trash.svg';
 import pen from '../images/Vector.svg';
-import search from '../images/Frame (1).svg';
 import { Trash2 } from 'lucide-react';
+
+interface Note {
+  id: string;
+  folderId: string;
+  title: string;
+}
 
 interface Folder {
   id: string;
@@ -40,11 +50,117 @@ const Sidebar: React.FC = () => {
   const [recents, setrecent] = useState<RecentNote[]>([]);
   const [form, setForm] = useState<boolean>(false);
 
+  const [noteTitle, setNoteTitle] = useState("");
+  const [noteContent, setNoteContent] = useState("");
+
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editedName, setEditedName] = useState<string>("");
+  const location = useLocation();
+
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [results, setResults] = useState<Note[]>([]);
+  const [loading, setLoading] = useState(false);
+  const debouncedQuery = useDebounce(searchQuery, 500);
+
+  const getCurrentFolderId = () => {
+    const match = location.pathname.match(/\/folders\/([^/]+)/);
+    return match ? match[1] : null;
+  };
 
   const navigate = useNavigate();
 
+  // Add notes
+
+  const addNote = async () => {
+    setForm(true);
+    const currentFolderId = getCurrentFolderId();
+    
+    if (!currentFolderId) {
+      alert("Please select a folder first");
+      return;
+    }
+
+    if (!noteTitle.trim()) {
+      // alert("Title is required");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        "https://nowted-server.remotestate.com/notes",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            folderId: currentFolderId,     
+            title: noteTitle,
+            content: noteContent,
+            isFavorite: false,
+            isArchived: false,
+          }),
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to create note");
+
+      const data = await response.json();
+
+      console.log("Note created:", data);
+
+      // Reset form
+      setNoteTitle("");
+      setNoteContent("");
+      setForm(false);
+
+      // Navigate 
+      navigate(`/folders/${currentFolderId}/notes/${data.id}`);
+
+    } catch (error) {
+      console.error("Error creating note:", error);
+    }
+  };
+
+  // search
+   useEffect(() => {
+    const fetchData = async () => {
+      if (!debouncedQuery.trim()) {
+        setResults([]);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const notes = await searchNotes(debouncedQuery);
+        setResults(notes);
+      } catch (error) {
+        console.error("Search failed:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [debouncedQuery]);
+
+  // close dropdown
+
+  const searchRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchRef.current &&
+        !searchRef.current.contains(event.target as Node)
+      ) {
+        setResults([]);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
   // Fetch Folders*************
   useEffect(() => {
     async function getFolders() {
@@ -164,10 +280,6 @@ const Sidebar: React.FC = () => {
     }
   };
 
-  // const isFavorites = location.pathname.startsWith("/favorites");
-  // const isTrash = location.pathname.startsWith("/trash");
-  // const isArchived = location.pathname.startsWith("/archived");
-
   return (
     <div className="h-full bg-[#121212] text-gray-300 p-5 flex flex-col">
 
@@ -185,17 +297,68 @@ const Sidebar: React.FC = () => {
             />
           </div>
           <div>
-            <img
-              src={search}
-              alt=""
-              className="h-[18px] cursor-pointer"
-            />
-          </div>
+            <Search
+          size={18}
+          className="cursor-pointer"
+          onClick={() => {
+            setIsSearching(prev => !prev);
+            setSearchQuery("");
+            setResults([]);
+          }}
+        />
+        </div>
         </div>
 
-        <button onClick={() => setForm(true)} className="bg-[#1f1f1f] text-white px-[10px] py-[10px] rounded-[3px] font-semibold text-base cursor-pointer transition duration-300 hover:bg-[#2a2a2a]">
-          + New Note
+         {!isSearching ? (
+        <button
+          onClick={addNote}
+          className="flex items-center justify-center gap-2 bg-[#1f1f1f] hover:bg-[#2a2a2a] py-2 rounded text-sm font-semibold"
+        >
+          <Plus size={16}/>
+          Add Note
         </button>
+      ) : (
+        <div className="relative" ref={searchRef}>
+          <input
+            type="text"
+            autoFocus
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search notes..."
+            className="w-full bg-[#1f1f1f] px-3 py-2 rounded outline-none text-sm"
+          />
+
+          {/* LOADING */}
+          {loading && (
+            <div className="absolute top-full left-0 mt-2 text-xs text-gray-400">
+              Searching...
+            </div>
+          )}
+
+          {/* result dropdown */}
+          {results.length > 0 && (
+            <div className="absolute top-full left-0 w-full bg-[#1a1a1a] mt-2 rounded shadow-lg max-h-[250px] overflow-y-auto z-50">
+              {results.map((note) => (
+                <div
+                  key={note.id}
+                  onClick={() => {
+                    navigate(
+                      `/folders/${note.folderId}/notes/${note.id}`
+                    );
+                    setIsSearching(false);
+                    setSearchQuery("");
+                    setResults([]);
+                  }}
+                  className="px-3 py-2 cursor-pointer hover:bg-[#2a2a2a] text-sm"
+                >
+                  {highlightText(note.title, searchQuery)}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       </div>
 
       {/* Recents */}
@@ -210,7 +373,7 @@ const Sidebar: React.FC = () => {
               }}
               className="flex items-center gap-[10px] leading-[1.8] font-semibold text-base px-[10px] py-[6px] rounded cursor-pointer hover:bg-[#312EB5]"
             >
-              <img src={document} alt="" />
+              <img src={documentIcon} alt="" />
               {note.title || "Untitled"}
             </li>
           ))}
@@ -351,6 +514,8 @@ const Sidebar: React.FC = () => {
                 <label className="text-gray-300 text-sm">Title</label>
                 <input
                   type="text"
+                  value={noteTitle}
+                  onChange={(e) => setNoteTitle(e.target.value)}
                   placeholder="Enter note title"
                   className="bg-[#2a2a2a] text-white px-3 py-2 rounded-md outline-none"
                 />
@@ -360,13 +525,17 @@ const Sidebar: React.FC = () => {
                 <label className="text-gray-300 text-sm">Description</label>
                 <textarea
                   rows={4}
+                  value={noteContent}
+                  onChange={(e) => setNoteContent(e.target.value)}
                   placeholder="Enter note description"
                   className="bg-[#2a2a2a] text-white px-3 py-2 rounded-md outline-none resize-none"
                 />
               </div>
 
               <button
-                className="bg-[#312EB5] hover:bg-[#2623a0] text-white py-2 rounded-md font-semibold transition duration-300">
+                onClick={addNote}
+                className="bg-[#312EB5] hover:bg-[#2623a0] text-white py-2 rounded-md font-semibold transition duration-300"
+              >
                 Add Note
               </button>
 
