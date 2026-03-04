@@ -6,7 +6,8 @@ import simpfolder from '../images/simp-folder.svg'
 import dots from '../images/dots.svg'
 import archieved from '../images/archieve1.svg'
 import deleteicon from '../images/deleteicon.svg';
-import fav1 from "../images/fav1.svg";
+
+import { Star } from "lucide-react";
 
 import { NotesContext } from "../context/NotesContext";
 
@@ -62,16 +63,23 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
   // Toggle favorite
   const handleFavourite = async () => {
     if (!note) return;
+
+    const updatedValue = !note.isFavorite;
+
     try {
       await fetch(`https://nowted-server.remotestate.com/notes/${note.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isFavorite: !note.isFavorite }),
+        body: JSON.stringify({ isFavorite: updatedValue }),
       });
-      setNote(prev => prev ? { ...prev, isFavorite: !prev.isFavorite } : prev);
-      setRefreshKey(prev => prev + 1);
+
+      setNote((prev) =>
+        prev ? { ...prev, isFavorite: updatedValue } : prev
+      );
+
+      setRefreshKey((prev) => prev + 1);
     } catch (err) {
-      console.error(err);
+      console.error("Favourite toggle failed:", err);
     }
   };
 
@@ -98,9 +106,9 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
       await fetch(`https://nowted-server.remotestate.com/notes/${note.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           isArchived: true,
-          isFavorite:false,
+          isFavorite: false,
         }),
       });
       setRefreshKey(prev => prev + 1);
@@ -111,7 +119,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
   };
 
   return (
-    <div className="font-['Source_Sans_Pro']">
+    <div className="font-['Source_Sans_Pro']  ">
       <div className="p-12 flex flex-col gap-4">
 
         {/* Top Section */}
@@ -125,10 +133,23 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
 
             {showMenu && (
               <div className="absolute right-0 top-full mt-2 w-52 bg-[#2b2b2b] rounded-md shadow-xl z-50">
-                
-                <button onClick={handleFavourite} className="flex items-center gap-3 px-4 py-3 hover:bg-[#3a3a3a] w-full text-left rounded-t-xl">
-                  <img src={fav1} className={`transition-all ${note?.isFavorite ? "fill-yellow-400 text-yellow-400" : "text-gray-400"}`} />
-                  {note?.isFavorite ? "Remove favorites" : "Add to favorites"}
+
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleFavourite();
+                    setShowMenu(false);
+                  }}
+                  className="flex items-center gap-3 px-4 py-3 
+             hover:bg-[#3a3a3a] w-full text-left rounded-t-xl"
+                >
+                  <Star
+                    className={`w-5 h-5 transition-all duration-200 ${note?.isFavorite
+                        ? "text-yellow-400 fill-yellow-400"
+                        : "text-gray-400"
+                      }`}
+                  />
+                  {note?.isFavorite ? "Remove favourites" : "Add to favourites"}
                 </button>
 
                 <button onClick={handleArchive} className="flex items-center gap-3 px-4 py-3 hover:bg-[#3a3a3a] w-full text-left">
