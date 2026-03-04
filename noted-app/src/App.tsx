@@ -4,6 +4,7 @@ import Middle from "./components/Middle";
 import FullNote from "./components/FullNote";
 import Note from "./components/Note";
 import React, { useState } from "react";
+import Restore from "./components/Restore";
 
 import { NotesProvider } from "./context/NotesContext";
 
@@ -63,6 +64,7 @@ const App: React.FC = () => {
               path="/trash/notes/:noteId"
               element={<FullNote setRefreshKey={setRefreshKey} />}
             />
+            <Route path="/folders/:folderId/notes/:noteId/restore" element={<Restore  />} />
           </Routes>
         </div>
 

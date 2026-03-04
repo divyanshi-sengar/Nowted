@@ -40,7 +40,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
 
-  const location = useLocation();
+  // const location = useLocation();
 
   useEffect(() => {
     const handleClickOutside = () => {
@@ -73,30 +73,28 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
   }, [noteId]);
 
 
-
   const handleArchive = async (): Promise<void> => {
-    if (!noteId) return;
+  if (!noteId || !note) return;
 
-    try {
-      // Archive the note
-      await fetch(`https://nowted-server.remotestate.com/notes/${noteId}`, {
+  try {
+    await fetch(
+      `https://nowted-server.remotestate.com/notes/${noteId}`,
+      {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isArchived: true }),
-      });
-
-      setRefreshKey(prev => prev + 1);
-
-      if (folderId) {
-        navigate(`/folders/${folderId}`);
-      } else {
-        navigate("/");
       }
-    } catch (err) {
-      console.error("Error archiving note:", err);
-    }
-  };
+    );
 
+    setRefreshKey(prev => prev + 1);
+
+    // ✅ GO TO RESTORE PAGE
+     navigate(`/folders/${note.folder.id}/notes/${noteId}/restore`);
+
+  } catch (err) {
+    console.error("Error archiving note:", err);
+  }
+};
 
  const handleFavourite = async (): Promise<void> => {
     if (!noteId || !note) return;
@@ -126,39 +124,30 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
   // Delete button 
 
   const handleDelete = async (): Promise<void> => {
-    if (!noteId) return;
+  if (!noteId) return;
 
-    try {
-      await fetch(
-        `https://nowted-server.remotestate.com/notes/${noteId}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            isArchived: true,
-          }),
-        }
-      );
+  try {
+    await fetch(
+      `https://nowted-server.remotestate.com/notes/${noteId}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          deletedAt: new Date().toISOString(),
+        }),
+      }
+    );
 
-      setRefreshKey(prev => prev + 1);
+    setRefreshKey(prev => prev + 1);
 
-      if (location.pathname.startsWith("/folders")) {
-        navigate(`/folders/${folderId}`);
-      }
-      else if (location.pathname.startsWith("/archived")) {
-        navigate("/archived");
-      }
-      else if (location.pathname.startsWith("/favorites")) {
-        navigate("/favorites");
-      }
-      else if (location.pathname.startsWith("/trash")) {
-        navigate("/trash");
-      }
+    navigate(`/restore/${noteId}`);
 
-    } catch (err) {
-      console.error("Delete failed", err);
-    }
-  };
+  } catch (err) {
+    console.error("Delete failed", err);
+  }
+};
+
+
 
   return (
     <div className="font-['Source_Sans_Pro']">

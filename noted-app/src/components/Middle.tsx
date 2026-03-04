@@ -26,6 +26,7 @@ interface Note {
 const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
   const { folderId } = useParams<{ folderId: string }>();
   const [loading, setLoading] = useState<boolean>(false);
+  const [folderName, setFolderName] = useState<string>("");
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -72,21 +73,20 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
         let filteredNotes = fetchedNotes;
 
         //  Trash view → only deleted notes
-        if (isTrashView) {
-          filteredNotes = fetchedNotes.filter(note => note.isArchived);
-        }
+        // let filteredNotes = fetchedNotes;
 
-        //  Folder / Archive / Favorites → exclude deleted
-        if (!isTrashView) {
-          filteredNotes = filteredNotes.filter(note => !note.isArchived);
-        }
+        if (folderId) filteredNotes = fetchedNotes.filter(n => !n.isArchived);
+        if (isArchivedView) filteredNotes = fetchedNotes.filter(n => n.isArchived);
+        if (isFavoriteView) filteredNotes = fetchedNotes.filter(n => n.isFavorite);
 
-        // Folder view → also exclude archived
-        if (folderId && !isArchivedView && !isFavoriteView) {
-          filteredNotes = filteredNotes.filter(note => !note.isArchived);
-        }
 
         setNotes(filteredNotes);
+
+        if (folderId && filteredNotes.length > 0) {
+          setFolderName(filteredNotes[0].folder.name);
+        } else {
+          setFolderName(""); // reset if not in folder
+        }
       } catch (error) {
         console.error("Error fetching notes:", error);
         setNotes([]);
@@ -104,7 +104,9 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
       ? "Favorite Notes"
       : isTrashView
         ? "Trash"
-        : "Folder Notes";
+        : folderId
+          ? folderName || "Folder Notes" // show folder name if available
+          : "All Notes";
 
   return (
     <div className="p-5 h-full bg-[#1c1c1c] flex flex-col gap-5">
