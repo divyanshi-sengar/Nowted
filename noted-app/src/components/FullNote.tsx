@@ -4,9 +4,9 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import calendar from '../images/calendar-icon.svg'
 import simpfolder from '../images/simp-folder.svg'
 import dots from '../images/dots.svg'
-import archieved from '../images/archieved.svg'
+import archieved from '../images/archieve1.svg'
 import deleteicon from '../images/deleteicon.svg';
-import { Star } from "lucide-react";
+import fav1 from "../images/fav1.svg";
 
 import { NotesContext } from "../context/NotesContext";
 
@@ -127,7 +127,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
               <div className="absolute right-0 top-full mt-2 w-52 bg-[#2b2b2b] rounded-md shadow-xl z-50">
                 
                 <button onClick={handleFavourite} className="flex items-center gap-3 px-4 py-3 hover:bg-[#3a3a3a] w-full text-left rounded-t-xl">
-                  <Star size={18} className={`transition-all ${note?.isFavorite ? "fill-yellow-400 text-yellow-400" : "text-gray-400"}`} />
+                  <img src={fav1} className={`transition-all ${note?.isFavorite ? "fill-yellow-400 text-yellow-400" : "text-gray-400"}`} />
                   {note?.isFavorite ? "Remove favorites" : "Add to favorites"}
                 </button>
 
@@ -149,17 +149,17 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
         {/* Middle Section */}
         <div className="flex flex-col gap-2 text-sm font-normal">
           <div className="flex gap-20 text-sm font-semibold">
-            <div className="flex gap-3">
+            <div className="flex gap-3 text-[#a3a3a3]">
               <img src={calendar} alt="calendar" />
               <p>Date</p>
             </div>
             <p className="underline">{note?.createdAt && new Date(note.createdAt).toLocaleDateString("en-GB")}</p>
           </div>
 
-          <hr className="border-gray-300 opacity-20" />
+          <hr className="border-gray-300 opacity-50 border-1" />
 
           <div className="flex gap-20 text-sm font-semibold">
-            <div className="flex gap-5">
+            <div className="flex gap-5 text-[#a3a3a3]">
               <img src={simpfolder} alt="folder" />
               <p>Folder</p>
             </div>

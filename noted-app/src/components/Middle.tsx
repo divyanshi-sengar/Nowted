@@ -124,7 +124,7 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
                   else if (isTrashView) navigate(`/trash/notes/${note.id}`);
                   else navigate(`/folders/${note.folderId}/notes/${note.id}`);
                 }}
-                className={`bg-[#232323] rounded-[2px] p-5 flex flex-col gap-[15px] cursor-pointer hover:bg-[#2a2a2a] transition-colors ${isSelected ? "border-l-4 border-blue-500" : ""}`}
+                className={`rounded-[2px] p-5 flex flex-col gap-[15px] cursor-pointer hover:bg-[#2a2a2a] transition-colors ${isSelected ? "bg-[#333333] text-white" : "bg-[#232323] hover:bg-[#2a2a2a]"}`}
               >
                 <div className="text-[18px] font-semibold text-white break-words whitespace-normal overflow-hidden">{note.title || "Untitled"}</div>
                 <div className="flex gap-[10px] text-gray-400 text-sm">

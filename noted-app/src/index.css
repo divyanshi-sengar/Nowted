@@ -11,3 +11,12 @@
 body {
   font-family: 'Source Sans Pro', sans-serif;
 }
+
+.scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+  border-radius: 10px;
+}
