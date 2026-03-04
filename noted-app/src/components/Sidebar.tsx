@@ -63,6 +63,7 @@ const Sidebar: React.FC = () => {
   const debouncedQuery = useDebounce(searchQuery, 500);
 
   const searchRef = useRef<HTMLDivElement>(null);
+  
 
   const getCurrentFolderId = () => {
     const match = location.pathname.match(/\/folders\/([^/]+)/);
@@ -174,6 +175,7 @@ const Sidebar: React.FC = () => {
       setFolder(prev =>
         prev.map(f => f.id === folderId ? { ...f, deletedAt: new Date().toISOString() } : f)
       );
+      navigate("/");
     } catch (err) {
       console.error(err);
     }
