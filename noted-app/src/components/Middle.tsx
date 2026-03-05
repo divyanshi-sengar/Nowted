@@ -70,7 +70,7 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
         } else if (isFavoriteView) {
           filteredNotes = fetchedNotes.filter(n => n.isFavorite && !n.deletedAt);
         } else if (isTrashView) {
-          filteredNotes = fetchedNotes.filter(n => !n.isFavorite && n.isArchived); // only deleted notes
+          filteredNotes = fetchedNotes.filter(n => n.deletedAt);
         } else if (folderId) {
           filteredNotes = fetchedNotes.filter(n => !n.isArchived && !n.deletedAt);
         }

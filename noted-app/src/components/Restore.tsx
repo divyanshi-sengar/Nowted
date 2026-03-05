@@ -74,7 +74,7 @@ const Restore: React.FC = () => {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen ">
+    <div className="flex items-center justify-center min-h-screen h-full bg-[#121212] ">
       <div className="flex flex-col items-center justify-center p-5 w-[500px] text-center">
         <img
           src={restore}

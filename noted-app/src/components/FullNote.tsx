@@ -62,26 +62,30 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
 
   // Toggle favorite
   const handleFavourite = async () => {
-    if (!note) return;
+  if (!note) return;
 
-    const updatedValue = !note.isFavorite;
+  const updatedValue = !note.isFavorite;
 
-    try {
-      await fetch(`https://nowted-server.remotestate.com/notes/${note.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isFavorite: updatedValue }),
-      });
+  try {
+    await fetch(`https://nowted-server.remotestate.com/notes/${note.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isFavorite: updatedValue }),
+    });
 
-      setNote((prev) =>
-        prev ? { ...prev, isFavorite: updatedValue } : prev
-      );
+    setNote(prev => prev ? { ...prev, isFavorite: updatedValue } : prev);
 
-      setRefreshKey((prev) => prev + 1);
-    } catch (err) {
-      console.error("Favourite toggle failed:", err);
+    setRefreshKey(prev => prev + 1);
+
+    // ⭐ IMPORTANT FIX
+    if (location.pathname.startsWith("/favorites") && updatedValue === false) {
+      navigate("/favorites");
     }
-  };
+
+  } catch (err) {
+    console.error("Favourite toggle failed:", err);
+  }
+};
 
   // Archive note
   const handleArchive = async () => {
@@ -119,7 +123,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
   };
 
   return (
-    <div className="font-['Source_Sans_Pro']  ">
+    <div className="font-['Source_Sans_Pro'] h-full bg-[#121212] text-white ">
       <div className="p-12 flex flex-col gap-4">
 
         {/* Top Section */}
