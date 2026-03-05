@@ -47,9 +47,9 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
 
         // Determine fetch URL based on view
         let url = "";
-        if (isArchivedView) url = "https://nowted-server.remotestate.com/notes?isArchived=true&limit=1000";
-        else if (isFavoriteView) url = "https://nowted-server.remotestate.com/notes?isFavorite=true&limit=1000";
-        else if (isTrashView) url = "https://nowted-server.remotestate.com/notes?deleted=true&limit=1000";
+        if (isArchivedView) url = "https://nowted-server.remotestate.com/notes?archived=true&favorite=false&deleted=false&limit=1000";
+        else if (isFavoriteView) url = "https://nowted-server.remotestate.com/notes?archived=false&favorite=true&deleted=false&limit=1000";
+        else if (isTrashView) url = "https://nowted-server.remotestate.com/notes?archived=false&favorite=false&deleted=true&limit=1000";
         else if (folderId) url = `https://nowted-server.remotestate.com/notes?folderId=${folderId}&limit=1000`;
         else {
           setNotes([]);
