@@ -65,12 +65,12 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
         // Filter notes based on view
         let filteredNotes: Note[] = [];
         if (isArchivedView) {
-          filteredNotes = fetchedNotes.filter(n => n.isArchived); // show all archived notes
+          filteredNotes = fetchedNotes.filter(n => n.isArchived && !n.isFavorite &&!n.deletedAt  ); // show all archived notes
           console.log(filteredNotes)
         } else if (isFavoriteView) {
-          filteredNotes = fetchedNotes.filter(n => n.isFavorite && !n.deletedAt);
+          filteredNotes = fetchedNotes.filter(n => n.isFavorite && !n.deletedAt && !n.isArchived);
         } else if (isTrashView) {
-          filteredNotes = fetchedNotes.filter(n => n.deletedAt);
+          filteredNotes = fetchedNotes.filter(n => n.deletedAt && !n.isArchived && !n.isFavorite);
         } else if (folderId) {
           filteredNotes = fetchedNotes.filter(n => !n.isArchived && !n.deletedAt);
         }
