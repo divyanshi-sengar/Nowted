@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, {  useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 
 import calendar from '../images/calendar-icon.svg'
@@ -9,7 +9,7 @@ import deleteicon from '../images/deleteicon.svg';
 
 import { Star } from "lucide-react";
 
-import { NotesContext } from "../context/NotesContext";
+// import { NotesContext } from "../context/NotesContext";
 
 interface Note {
   id: string;

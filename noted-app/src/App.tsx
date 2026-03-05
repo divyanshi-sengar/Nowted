@@ -32,7 +32,7 @@ const App: React.FC = () => {
             <Route path="/archived/*" element={<Middle refreshKey={refreshKey} />} />
             <Route path="/favorites/*" element={<Middle refreshKey={refreshKey} />} />
             <Route path="/trash/*" element={<Middle refreshKey={refreshKey} />} />
-            {/* ✅ Add this line to show Middle for Restore view */}
+            {/*  Add this line to show Middle for Restore view */}
             <Route path="/restore/*" element={<Middle refreshKey={refreshKey} />} />
           </Routes>
         </div>

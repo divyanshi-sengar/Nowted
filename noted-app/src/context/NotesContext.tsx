@@ -1,4 +1,5 @@
-import React, { createContext, useState, ReactNode, FC } from "react";
+import { createContext, useState} from "react";
+import type { ReactNode, FC } from "react";
 
 interface NotesContextType {
   refresh: boolean;

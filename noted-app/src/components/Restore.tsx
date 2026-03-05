@@ -17,7 +17,7 @@ interface Note {
 const Restore: React.FC = () => {
   const navigate = useNavigate();
 
-  const { folderId, noteId } = useParams<{ folderId: string; noteId: string }>();
+  const { noteId } = useParams<{ folderId: string; noteId: string }>();
   const [note, setNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const { toggleRefresh } = useContext(NotesContext);

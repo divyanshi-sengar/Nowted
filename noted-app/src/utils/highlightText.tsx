@@ -1,4 +1,4 @@
-import React from "react";
+
 
 export const highlightText = (text: string, query: string) => {
   if (!query) return text;
