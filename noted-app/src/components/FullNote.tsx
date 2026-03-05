@@ -183,12 +183,12 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
 
           <hr className="border-gray-300 opacity-20 border-1" />
 
-          <div className="flex gap-20 text-sm font-semibold">
+          <div className="flex gap-20 text-sm font-semibold flex-wrap">
             <div className="flex gap-5 text-[#a3a3a3]">
               <img src={simpfolder} alt="folder" />
               <p>Folder</p>
             </div>
-            <p className="underline">{note?.folder?.name}</p>
+            <p className="underline break-words min-w-0">{note?.folder?.name}</p>
           </div>
         </div>
 
