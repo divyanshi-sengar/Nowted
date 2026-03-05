@@ -163,7 +163,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
                 <hr className="border-gray-600 opacity-40" />
 
                 <button onClick={handleTrash} className="flex items-center gap-3 px-4 py-3 hover:bg-red-600 hover:text-white w-full text-left text-red-400 rounded-b-xl">
-                  <img src={deleteicon} alt="" /> Trash
+                  <img src={deleteicon} alt="" /> Delete
                 </button>
 
               </div>
@@ -181,7 +181,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
             <p className="underline">{note?.createdAt && new Date(note.createdAt).toLocaleDateString("en-GB")}</p>
           </div>
 
-          <hr className="border-gray-300 opacity-50 border-1" />
+          <hr className="border-gray-300 opacity-20 border-1" />
 
           <div className="flex gap-20 text-sm font-semibold">
             <div className="flex gap-5 text-[#a3a3a3]">
