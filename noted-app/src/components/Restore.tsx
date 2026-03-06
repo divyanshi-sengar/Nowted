@@ -1,6 +1,6 @@
 import React from "react";
 import restore from '../images/restore.svg'
-import { useState, useEffect,useContext } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { NotesContext } from "../context/NotesContext";
 
@@ -35,7 +35,7 @@ const Restore: React.FC = () => {
 
       } catch (err) {
         console.log("Error fetching note", err);
-      }finally {
+      } finally {
         setLoading(false);
       }
     }
@@ -43,14 +43,14 @@ const Restore: React.FC = () => {
     getNote();
   }, [noteId]);
 
-   const handleRestore = async () => {
-    if ( !note) return;
+  const handleRestore = async () => {
+    if (!note) return;
 
     try {
-      await fetch(`https://nowted-server.remotestate.com/notes/${noteId}`, {
-        method: "PATCH",
+      const res = await fetch(`https://nowted-server.remotestate.com/notes/${noteId}/restore`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isArchived:false , isFavorite:false}),
+        body: JSON.stringify({ deletedAt: null }),
       });
 
       // Trigger middle pane refresh
@@ -58,8 +58,8 @@ const Restore: React.FC = () => {
 
       // Navigate back to the folder and highlight restored note
 
-        navigate(`/folders/${note.folder.id}`); 
-      // navigate(`/folders/${note.folder.id}/notes/${note.id}`);
+      navigate(`/folders/${note.folder.id}`);
+
     } catch (err) {
       console.error("Restore failed", err);
     }

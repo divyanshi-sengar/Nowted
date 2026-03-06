@@ -1,4 +1,4 @@
-import React, {  useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 
 import calendar from '../images/calendar-icon.svg'
@@ -7,7 +7,9 @@ import dots from '../images/dots.svg'
 import archieved from '../images/archieve1.svg'
 import deleteicon from '../images/deleteicon.svg';
 
+import "./Sidebar.css";
 import { Star } from "lucide-react";
+import { useDebounce } from "../hooks/useDebounce";
 
 // import { NotesContext } from "../context/NotesContext";
 
@@ -38,6 +40,34 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
 
+  const debouncedTitle = useDebounce(note?.title, 500);
+  const debouncedContent = useDebounce(note?.content, 500);
+
+  useEffect(() => {
+    if (!note) return;
+
+    const updateNote = async () => {
+      try {
+        await fetch(`https://nowted-server.remotestate.com/notes/${note.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: note.title,
+            content: note.content
+          })
+        });
+
+        setRefreshKey(prev => prev + 1);
+
+      } catch (err) {
+        console.error("Autosave failed", err);
+      }
+    };
+
+    updateNote();
+
+  }, [debouncedTitle, debouncedContent]);
+
   const location = useLocation();
 
   useEffect(() => {
@@ -62,42 +92,54 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
 
   // Toggle favorite
   const handleFavourite = async () => {
-  if (!note) return;
-
-  const updatedValue = !note.isFavorite;
-
-  try {
-    await fetch(`https://nowted-server.remotestate.com/notes/${note.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isFavorite: updatedValue }),
-    });
-
-    setNote(prev => prev ? { ...prev, isFavorite: updatedValue } : prev);
-
-    setRefreshKey(prev => prev + 1);
-
-    // ⭐ IMPORTANT FIX
-    if (location.pathname.startsWith("/favorites") && updatedValue === false) {
-      navigate("/favorites");
-    }
-
-  } catch (err) {
-    console.error("Favourite toggle failed:", err);
-  }
-};
-
-  // Archive note
-  const handleArchive = async () => {
     if (!note) return;
+
+    const updatedValue = !note.isFavorite;
+
     try {
       await fetch(`https://nowted-server.remotestate.com/notes/${note.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isArchived: true }),
+        body: JSON.stringify({ isFavorite: updatedValue }),
       });
+
+      setNote(prev => prev ? { ...prev, isFavorite: updatedValue } : prev);
+
+      setRefreshKey(prev => prev + 1);
+
+      // ⭐ IMPORTANT FIX
+      if (location.pathname.startsWith("/favorites") && updatedValue === false) {
+        navigate("/favorites");
+      }
+
+    } catch (err) {
+      console.error("Favourite toggle failed:", err);
+    }
+  };
+
+  // Archive note
+  const handleArchive = async () => {
+    if (!note) return;
+    const updatedValue=!note.isArchived;
+    try {
+      await fetch(`https://nowted-server.remotestate.com/notes/${note.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isArchived: updatedValue }),
+      });
+      
       setRefreshKey(prev => prev + 1);
       navigate(`/folders/${note.folder.id}`);
+
+      if (location.pathname.startsWith("/archived") && updatedValue === false) {
+        // navigate("/archived");
+        navigate(`/folders/${note.folder.id}`);
+      }
+
+      if (updatedValue === true) {
+      navigate(`/folders/${note.folder.id}`);
+    }
+
     } catch (err) {
       console.error(err);
     }
@@ -108,13 +150,10 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
     if (!note) return;
     try {
       await fetch(`https://nowted-server.remotestate.com/notes/${note.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          isArchived: true,
-          isFavorite: false,
-        }),
+        method: "DELETE",
       });
+      // navigate(`/folders/${note.folder.id}/notes/${note.id}`);
+      
       setRefreshKey(prev => prev + 1);
       navigate(`/restore/${note.id}`);
     } catch (err) {
@@ -124,11 +163,19 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
 
   return (
     <div className="font-['Source_Sans_Pro'] h-full bg-[#121212] text-white ">
-      <div className="p-12 flex flex-col gap-4">
+      <div className="p-12 flex flex-col gap-4 h-full">
 
         {/* Top Section */}
-        <div className="flex justify-between items-center">
-          <h1 className="text-[32px] font-semibold break-words whitespace-normal overflow-hidden">{note?.title}</h1>
+        <div className="flex justify-between items-center gap-4">
+          {/* <h1 className="text-[32px] font-semibold break-words whitespace-normal overflow-hidden">{note?.title}</h1> */}
+          <input
+            value={note?.title || ""}
+            placeholder="Untitled"
+            onChange={(e) =>
+              setNote(prev => prev ? { ...prev, title: e.target.value } : prev)
+            }
+            className="text-[32px] font-semibold bg-transparent outline-none w-full break-words whitespace-normal"
+          />
 
           <div className="relative">
             <button onClick={e => { e.stopPropagation(); setShowMenu(!showMenu); }}>
@@ -149,15 +196,15 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
                 >
                   <Star
                     className={`w-5 h-5 transition-all duration-200 ${note?.isFavorite
-                        ? "text-yellow-400 fill-yellow-400"
-                        : "text-gray-400"
+                      ? "text-yellow-400 fill-yellow-400"
+                      : "text-gray-400"
                       }`}
                   />
                   {note?.isFavorite ? "Remove favourites" : "Add to favourites"}
                 </button>
 
                 <button onClick={handleArchive} className="flex items-center gap-3 px-4 py-3 hover:bg-[#3a3a3a] w-full text-left">
-                  <img src={archieved} alt="" /> Archived
+                  <img src={archieved} alt="" /> {note?.isArchived ? "Remove from Archive" : "Archive"}
                 </button>
 
                 <hr className="border-gray-600 opacity-40" />
@@ -172,7 +219,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
         </div>
 
         {/* Middle Section */}
-        <div className="flex flex-col gap-2 text-sm font-normal">
+        <div className="flex flex-col gap-2 text-sm font-normal ">
           <div className="flex gap-20 text-sm font-semibold">
             <div className="flex gap-3 text-[#a3a3a3]">
               <img src={calendar} alt="calendar" />
@@ -186,15 +233,24 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
           <div className="flex gap-20 text-sm font-semibold flex-wrap">
             <div className="flex gap-5 text-[#a3a3a3]">
               <img src={simpfolder} alt="folder" />
-              <p>Folder</p>
+              <a href="#">Folder</a>
             </div>
             <p className="underline break-words min-w-0">{note?.folder?.name}</p>
           </div>
         </div>
 
         {/* Bottom Section */}
-        <div className="pt-2 text-base font-normal leading-7 break-words whitespace-pre-wrap overflow-hidden">
-          <p>{note?.content}</p>
+        <div className="pt-2 text-base font-normal leading-7  flex-1 ">
+          {/* <p>{note?.content}</p> */}
+
+          <textarea
+            value={note?.content || ""}
+            placeholder="Start writing your note..."
+            onChange={(e) =>
+              setNote(prev => prev ? { ...prev, content: e.target.value } : prev)
+            }
+            className="w-full h-full  outline-none resize-none scrollbar"
+          />
         </div>
 
       </div>

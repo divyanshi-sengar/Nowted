@@ -1,5 +1,6 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef,useContext } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { NotesContext } from "../context/NotesContext";
 
 import "./Sidebar.css";
 import { useDebounce } from "../hooks/useDebounce";
@@ -46,16 +47,14 @@ const Sidebar: React.FC = () => {
   const [showInput, setShowInput] = useState(false);
   const [folder, setFolder] = useState<Folder[]>([]);
   const [recents, setrecent] = useState<RecentNote[]>([]);
-  const [form, setForm] = useState(false);
-
-  const [noteTitle, setNoteTitle] = useState("");
-  const [noteContent, setNoteContent] = useState("");
 
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editedName, setEditedName] = useState("");
 
   const location = useLocation();
   const navigate = useNavigate();
+
+  const { refresh } = useContext(NotesContext);
 
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -73,9 +72,9 @@ const Sidebar: React.FC = () => {
 
   // Add Note
   const addNote = async () => {
-    setForm(true);
+    // setForm(true);
     const currentFolderId = getCurrentFolderId();
-    if (!currentFolderId || !noteTitle.trim()) return;
+    if (!currentFolderId) return;
 
     try {
       const response = await fetch(
@@ -85,20 +84,15 @@ const Sidebar: React.FC = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             folderId: currentFolderId,
-            title: noteTitle,
-            content: noteContent,
+            title: "",
+            content: "",
             isFavorite: false,
             isArchived: false,
           }),
         }
       );
 
-      if (!response.ok) throw new Error("Failed to create note");
       const data = await response.json();
-
-      setNoteTitle("");
-      setNoteContent("");
-      setForm(false);
 
       navigate(`/folders/${currentFolderId}/notes/${data.id}`);
     } catch (error) {
@@ -144,13 +138,23 @@ const Sidebar: React.FC = () => {
         const response = await fetch("https://nowted-server.remotestate.com/folders");
         const data = await response.json();
         setFolder(data.folders || []);
+
+      //   if (folder.length > 0) {
+      //   navigate(`/folders/${folder[0].id}`);
+      // }
+
+
       } catch (err) {
         console.error(err);
         alert("Error fetching folders");
       }
     }
     getFolders();
-  }, []);
+
+    // refresh dependency removed
+  }, [refresh]);
+
+
 
   // Fetch Recent Notes
   useEffect(() => {
@@ -300,7 +304,7 @@ const Sidebar: React.FC = () => {
           </button>
         </div>
 
-        <ul className="flex-1 overflow-y-auto scrollbar">
+        <ul className="flex-1 overflow-y-auto scrollbar space-y-1">
           {showInput && (
             <li className="px-5 py-2">
               <input
@@ -322,7 +326,7 @@ const Sidebar: React.FC = () => {
                 key={item.id}
                 onClick={() => editingFolderId !== item.id && navigate(`/folders/${item.id}`)}
                 onDoubleClick={() => { setEditingFolderId(item.id); setEditedName(item.name); }}
-                className={`group w-full flex justify-between items-center px-5 py-1 cursor-pointer ${isActive ? "bg-[#1f1f1f]" : "hover:bg-[#1f1f1f]"}`}
+                className={`group w-full flex justify-between items-center px-5 py-1 cursor-pointer ${isActive ? "bg-[#312EB5]" : "hover:bg-[#312EB5]"}`}
               >
                 <div className="flex items-center gap-3 w-full  py-[5px] overflow-hidden">
                   <img src={isActive ? foldericon : simpfolder} className="transition-all duration-200 w-5 h-5 flex-shrink-0" />
@@ -356,20 +360,20 @@ const Sidebar: React.FC = () => {
       <div className="pb-5">
         <p className="px-5 text-sm text-white font-semibold mb-2">More</p>
         <ul>
-          <li className="flex items-center font-semibold gap-[10px] px-5 py-2 rounded cursor-pointer hover:bg-[#1f1f1f] truncate" onClick={() => navigate("/favorites")}>
+          <li className="flex items-center font-semibold gap-[10px] px-5 py-2 rounded cursor-pointer hover:bg-[#312EB5] truncate" onClick={() => navigate("/favorites")}>
             <img src={favourite} alt="" /> <span className="truncate">Favorites</span>
           </li>
-          <li className="flex items-center font-semibold gap-[10px] px-5 py-2 rounded cursor-pointer hover:bg-[#1f1f1f] truncate" onClick={() => navigate("/trash")}>
+          <li className="flex items-center font-semibold gap-[10px] px-5 py-2 rounded cursor-pointer hover:bg-[#312EB5] truncate" onClick={() => navigate("/trash")}>
             <img src={trash} alt="" /> <span className="truncate">Trash</span>
           </li>
-          <li className="flex items-center font-semibold gap-[10px] px-5 py-2 rounded cursor-pointer hover:bg-[#1f1f1f] truncate" onClick={() => navigate("/archived")}>
+          <li className="flex items-center font-semibold gap-[10px] px-5 py-2 rounded cursor-pointer hover:bg-[#312EB5] truncate" onClick={() => navigate("/archived")}>
             <img src={archieved} alt="" /> <span className="truncate">Archived Notes</span>
           </li>
         </ul>
       </div>
 
       {/* Add Note Modal */}
-      {form && (
+      {/* {form && (
         <div className="fixed inset-0 backdrop-blur-[1px] flex items-center justify-center">
           <div className="bg-[#1f1f1f] w-[400px] p-8 rounded-xl shadow-lg flex flex-col gap-6">
             <h2 className="text-white text-2xl font-semibold text-center">Add Note</h2>
@@ -407,7 +411,7 @@ const Sidebar: React.FC = () => {
             </button>
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 };
