@@ -220,8 +220,8 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
 
         {/* Middle Section */}
         <div className="flex flex-col gap-2 text-sm font-normal ">
-          <div className="flex gap-20 text-sm font-semibold">
-            <div className="flex gap-3 text-[#a3a3a3]">
+          <div className="flex gap-5 text-sm font-semibold item-start">
+            <div className="flex gap-3 text-[#a3a3a3] w-[140px]">
               <img src={calendar} alt="calendar" />
               <p>Date</p>
             </div>
@@ -230,10 +230,10 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
 
           <hr className="border-gray-300 opacity-20 border-1" />
 
-          <div className="flex gap-20 text-sm font-semibold flex-wrap">
-            <div className="flex gap-5 text-[#a3a3a3]">
-              <img src={simpfolder} alt="folder" />
-              <a href="#">Folder</a>
+          <div className="flex  text-sm font-semibold item start">
+            <div className="flex gap-5 text-[#a3a3a3] w-40 flex-shrink-0 truncate ">
+              <img src={simpfolder} alt="folder" className="w-5 h-5 object-contain flex-shrink-0" />
+              <a >Folder</a>
             </div>
             <p className="underline break-words min-w-0">{note?.folder?.name}</p>
           </div>

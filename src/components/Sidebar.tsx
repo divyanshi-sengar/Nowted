@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef,useContext } from "react";
+import { useEffect, useState, useRef, useContext } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { NotesContext } from "../context/NotesContext";
 
@@ -63,7 +63,7 @@ const Sidebar: React.FC = () => {
   const debouncedQuery = useDebounce(searchQuery, 500);
 
   const searchRef = useRef<HTMLDivElement>(null);
-  
+
 
   const getCurrentFolderId = () => {
     const match = location.pathname.match(/\/folders\/([^/]+)/);
@@ -139,10 +139,9 @@ const Sidebar: React.FC = () => {
         const data = await response.json();
         setFolder(data.folders || []);
 
-      //   if (folder.length > 0) {
-      //   navigate(`/folders/${folder[0].id}`);
-      // }
-
+        if (location.pathname === "/" && folder.length > 0) {
+          navigate(`/folders/${folder[0].id}`);
+        }
 
       } catch (err) {
         console.error(err);
@@ -153,8 +152,6 @@ const Sidebar: React.FC = () => {
 
     // refresh dependency removed
   }, [refresh]);
-
-
 
   // Fetch Recent Notes
   useEffect(() => {
