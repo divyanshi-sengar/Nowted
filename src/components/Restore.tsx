@@ -47,7 +47,7 @@ const Restore: React.FC = () => {
     if (!note) return;
 
     try {
-      const res = await fetch(`https://nowted-server.remotestate.com/notes/${noteId}/restore`, {
+      await fetch(`https://nowted-server.remotestate.com/notes/${noteId}/restore`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ deletedAt: null }),
