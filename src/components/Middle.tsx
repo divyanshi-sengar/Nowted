@@ -36,6 +36,7 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
   const isFavoriteView = location.pathname.startsWith("/favorites");
   const isTrashView = location.pathname.startsWith("/trash");
 
+
   useEffect(() => {
     let isActive=true;
     const fetchNotes = async () => {

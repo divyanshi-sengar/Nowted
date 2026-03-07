@@ -11,7 +11,7 @@ const Note: React.FC = () => {
         />
 
         <h2 className="text-white text-xl font-semibold mt-4">
-          Select a note to view
+          Select a note to view 
         </h2>
 
         <p className="text-gray-400 mt-2">

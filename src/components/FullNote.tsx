@@ -217,10 +217,10 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
       await fetch(`https://nowted-server.remotestate.com/notes/${note.id}`, {
         method: "DELETE",
       });
-      // navigate(`/folders/${note.folder.id}/notes/${note.id}`);
+      navigate(`/folders/${note.folder.id}/restore/${note.id}`);
 
       setRefreshKey(prev => prev + 1);
-      navigate(`/restore/${note.id}`);
+      // navigate(`/restore/${note.id}`);
     } catch (err) {
       console.error("Trash failed:", err);
     }
