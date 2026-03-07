@@ -146,9 +146,9 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
         : prev
     );
 
+    navigate(`/folders/${folderId}/notes/${note.id}`);
     setRefreshKey((prev) => prev + 1);
 
-     navigate(`/folders/${folderId}/notes/${note.id}`);
 
   } catch (err) {
     console.error("Move note failed:", err);

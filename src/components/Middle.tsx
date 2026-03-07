@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { useState, useEffect,useContext } from "react";
+import { useState, useEffect, useContext } from "react";
 import { NotesContext } from "../context/NotesContext"; // your NotesContext
 
 import "./Sidebar.css";
@@ -29,13 +29,15 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const selectedNoteId = noteId || location.pathname.split("/").pop();
+  // const selectedNoteId = noteId || location.pathname.split("/").pop();
+  const selectedNoteId = noteId
 
   const isArchivedView = location.pathname.startsWith("/archived");
   const isFavoriteView = location.pathname.startsWith("/favorites");
   const isTrashView = location.pathname.startsWith("/trash");
 
   useEffect(() => {
+    let isActive=true;
     const fetchNotes = async () => {
       try {
         setLoading(true);
@@ -63,20 +65,25 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
 
         const res = await fetch(url);
         const data = await res.json();
+
+        if (!isActive) return;
+
         const fetchedNotes: Note[] = Array.isArray(data.notes) ? data.notes : [];
 
         console.log(fetchedNotes);
         // Filter notes based on view
         let filteredNotes: Note[] = [];
         if (isArchivedView) {
-          filteredNotes = fetchedNotes.filter(n => n.isArchived && !n.isFavorite &&!n.deletedAt  ); // show all archived notes
+          filteredNotes = fetchedNotes.filter(n => n.isArchived && !n.isFavorite && !n.deletedAt); // show all archived notes
           console.log(filteredNotes)
         } else if (isFavoriteView) {
           filteredNotes = fetchedNotes.filter(n => n.isFavorite && !n.deletedAt && !n.isArchived);
         } else if (isTrashView) {
-          filteredNotes = fetchedNotes.filter(n => n.deletedAt!=null && !n.isArchived && !n.isFavorite);
+          filteredNotes = fetchedNotes.filter(n => n.deletedAt != null && !n.isArchived && !n.isFavorite);
         } else if (folderId) {
-          filteredNotes = fetchedNotes.filter(n => !n.isArchived && !n.deletedAt);
+          filteredNotes = fetchedNotes.filter(
+            n => n.folderId === folderId && !n.isArchived && !n.deletedAt
+          );
         }
 
         console.log(filteredNotes)
@@ -84,22 +91,31 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
         setNotes(filteredNotes);
 
         // Set folder name for folder view
-        if (folderId && !isArchivedView && !isFavoriteView && filteredNotes.length > 0) {
+        if (folderId && filteredNotes.length > 0) {
           setFolderName(filteredNotes[0].folder.name);
-        } else {
-          setFolderName(""); // reset for other views
+        }
+        else if (folderId) {
+          const folderRes = await fetch(`https://nowted-server.remotestate.com/folders`);
+          const folderData = await folderRes.json();
+
+          const currentFolder = folderData.folders.find((f: Folder) => f.id === folderId);
+          setFolderName(currentFolder?.name || "");
         }
 
       } catch (error) {
         console.error("Error fetching notes:", error);
         setNotes([]);
       } finally {
-        setLoading(false);
+        if (isActive) setLoading(false);
       }
     };
 
     fetchNotes();
-  }, [routeFolderId, noteId, location.pathname, refreshKey,refresh]);
+
+    return () => {
+    isActive = false; // cancel previous fetch result
+  };
+  }, [routeFolderId, noteId, location.pathname, refreshKey, refresh]);
 
   const pageTitle = isArchivedView
     ? "Archived Notes"
