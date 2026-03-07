@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
+import { ChevronDownIcon } from '@heroicons/react/20/solid'
 
 import calendar from '../images/calendar-icon.svg'
 import simpfolder from '../images/simp-folder.svg'
@@ -28,6 +30,11 @@ interface Note {
   deletedAt?: string | null;
 }
 
+interface Folder {
+  id: string;
+  name: string;
+}
+
 interface FullNoteProps {
   setRefreshKey: React.Dispatch<React.SetStateAction<number>>;
 }
@@ -37,14 +44,20 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
   const { noteId } = useParams<{ noteId?: string }>();
   const navigate = useNavigate();
 
+  const [folder, setFolder] = useState<Folder[]>([]);
+
   const [showMenu, setShowMenu] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
 
   const debouncedTitle = useDebounce(note?.title, 500);
-  const debouncedContent = useDebounce(note?.content, 500);
+  const debouncedContent = useDebounce(note?.content, 300);
+
+  // const isFirstRender = useRef(true);
+  const isTyping = useRef(false);
 
   useEffect(() => {
-    if (!note) return;
+    if (!note?.id) return;
+
 
     const updateNote = async () => {
       try {
@@ -66,7 +79,24 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
 
     updateNote();
 
-  }, [debouncedTitle, debouncedContent]);
+  }, [debouncedTitle, debouncedContent,note?.id]);
+
+  useEffect(() => {
+    const getFolders = async () => {
+      try {
+        const response = await fetch("https://nowted-server.remotestate.com/folders");
+        const data = await response.json();
+
+        setFolder(data.folders);
+
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    getFolders();
+
+  }, []);
 
   const location = useLocation();
 
@@ -89,6 +119,41 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
     };
     fetchNote();
   }, [noteId]);
+
+  const moveNoteToFolder = async (folderId: string) => {
+  if (!note) return;
+
+  try {
+    await fetch(`https://nowted-server.remotestate.com/notes/${note.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ folderId }),
+    });
+
+    // find the selected folder
+    const selectedFolder = folder.find((f) => f.id === folderId);
+
+    // update local state so UI updates immediately
+    setNote((prev) =>
+      prev
+        ? {
+            ...prev,
+            folder: {
+              id: folderId,
+              name: selectedFolder?.name || "",
+            },
+          }
+        : prev
+    );
+
+    setRefreshKey((prev) => prev + 1);
+
+     navigate(`/folders/${folderId}/notes/${note.id}`);
+
+  } catch (err) {
+    console.error("Move note failed:", err);
+  }
+};
 
   // Toggle favorite
   const handleFavourite = async () => {
@@ -120,14 +185,14 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
   // Archive note
   const handleArchive = async () => {
     if (!note) return;
-    const updatedValue=!note.isArchived;
+    const updatedValue = !note.isArchived;
     try {
       await fetch(`https://nowted-server.remotestate.com/notes/${note.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isArchived: updatedValue }),
       });
-      
+
       setRefreshKey(prev => prev + 1);
       navigate(`/folders/${note.folder.id}`);
 
@@ -137,8 +202,8 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
       }
 
       if (updatedValue === true) {
-      navigate(`/folders/${note.folder.id}`);
-    }
+        navigate(`/folders/${note.folder.id}`);
+      }
 
     } catch (err) {
       console.error(err);
@@ -153,7 +218,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
         method: "DELETE",
       });
       // navigate(`/folders/${note.folder.id}/notes/${note.id}`);
-      
+
       setRefreshKey(prev => prev + 1);
       navigate(`/restore/${note.id}`);
     } catch (err) {
@@ -170,10 +235,11 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
           {/* <h1 className="text-[32px] font-semibold break-words whitespace-normal overflow-hidden">{note?.title}</h1> */}
           <input
             value={note?.title || ""}
-            placeholder="Untitled"
-            onChange={(e) =>
+            placeholder="Untitled" 
+            onChange={(e) =>{
+              isTyping.current=true;
               setNote(prev => prev ? { ...prev, title: e.target.value } : prev)
-            }
+            }}
             className="text-[32px] font-semibold bg-transparent outline-none w-full break-words whitespace-normal"
           />
 
@@ -235,7 +301,33 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
               <img src={simpfolder} alt="folder" className="w-5 h-5 object-contain flex-shrink-0" />
               <a >Folder</a>
             </div>
-            <p className="underline break-words min-w-0">{note?.folder?.name}</p>
+            <Menu as="div" className="relative inline-block">
+              <MenuButton className="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs hover:bg-[#312EB5] ">
+                {!note?.folder?.name ? "" : (note?.folder?.name.length > 10 ? note?.folder?.name.slice(0, 10) + "..." : note?.folder?.name)}
+                <ChevronDownIcon className="-mr-1 size-5 text-gray-400" />
+              </MenuButton>
+
+              <MenuItems className="absolute left-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg">
+
+                {/* Scrollable container */}
+                <div className="py-1 max-h-48 overflow-y-auto scrollbar">
+                  {folder
+                    .filter((item) => item.id !== note?.folder?.id)
+                    .map((item) => (
+                      <MenuItem key={item.id}>
+                        <button
+                          onClick={() => moveNoteToFolder(item.id)}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-[#312EB5]"
+                        >
+                          {item.name.length > 10 ? item.name.slice(0, 10) + "..." : item.name}
+                        </button>
+                      </MenuItem>
+                    ))}
+                </div>
+
+              </MenuItems>
+            </Menu>
+            {/* <p className="underline break-words min-w-0"></p> */}
           </div>
         </div>
 
@@ -254,7 +346,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
         </div>
 
       </div>
-    </div>
+    </div >
   );
 };
 

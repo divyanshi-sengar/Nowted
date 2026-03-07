@@ -6,3 +6,18 @@
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;     /* Firefox */
 }
+/* thin scrollbar */
+.scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+/* scrollbar thumb (the moving bar) */
+.scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(150,150,150,0.5);
+  border-radius: 10px;
+}
+
+/* hide scrollbar track */
+.scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
