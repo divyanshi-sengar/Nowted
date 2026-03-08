@@ -5,7 +5,7 @@ import "../index.css"
 const Note: React.FC = () => {
   return (
     <div className="flex items-center justify-center min-h-screen h-full overflow-y-auto bg-main text-gray-300 font-['Source_Sans_Pro']">
-      <div className="flex flex-col items-center justify-center p-5 w-[500px] text-center">
+      <div className="flex flex-col items-center justify-center p-5 w-[500px] text-center shadow-lg">
         <img
           src={largedoc}
           alt=""

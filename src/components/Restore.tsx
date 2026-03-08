@@ -83,7 +83,7 @@ const Restore: React.FC = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen h-full bg-main text-main">
-      <div className="flex flex-col items-center justify-center p-5 w-[500px] text-center rounded-lg">
+      <div className="flex flex-col items-center justify-center p-5 w-[500px] text-center rounded-lg shadow-lg">
         
         <img src={restore} alt="" className="icon-theme"/>
 

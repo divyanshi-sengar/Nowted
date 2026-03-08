@@ -1,6 +1,7 @@
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useContext } from "react";
 import { NotesContext } from "../context/NotesContext"; // your NotesContext
+import React from "react";
 
 import Loader from "../components/Loader";
 
@@ -31,8 +32,6 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  // const selectedNoteId = noteId || location.pathname.split("/").pop();
-  const selectedNoteId = noteId
   const [selectedNote, setSelectedNote] = useState<string | null>(noteId || null);
 
 
@@ -120,12 +119,11 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
     return () => {
       isActive = false; // cancel previous fetch result
     };
-  }, [routeFolderId, location.pathname, refreshKey, refresh]);
+  }, [routeFolderId, refreshKey, location.pathname,refresh]);
 
   useEffect(() => {
-  // Reset selected note whenever folder/view changes
-  setSelectedNote(noteId || null);
-}, [routeFolderId, isArchivedView, isFavoriteView, isTrashView, noteId]);
+    setSelectedNote(noteId || null);
+  }, [noteId]);
 
   const pageTitle = isArchivedView
     ? "Archived Notes"
@@ -150,18 +148,17 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
               <div
                 key={note.id}
                 onClick={() => {
-                  setSelectedNote(note.id); // immediate highlight
-                  // Only navigate if you want to show the note in FullNote
+                  setSelectedNote(note.id)
                   if (isArchivedView) navigate(`/archived/notes/${note.id}`);
                   else if (isFavoriteView) navigate(`/favorites/notes/${note.id}`);
                   else if (isTrashView) navigate(`/trash/notes/${note.id}`);
                   else navigate(`/folders/${note.folderId}/notes/${note.id}`);
                 }}
                 className={`rounded p-5 cursor-pointer transition-all duration-200
-    ${selectedNote === note.id
-                    ? "shadow-[0_0_10px_2px_rgba(59,130,246,0.4)] border-l-4 border-blue-500"
+  ${selectedNote === note.id
+                    ? "shadow-[0_0_15px_3px_rgba(59,130,246,0.5)] border-l-4 border-blue-500"
                     : "bg-card hover:bg-hover border-l-4 border-transparent"
-                  }`}
+                  } ${notes[0].id === note.id ? "mt-1" : ""}`}
               >
                 <div className="text-[18px] font-semibold text-main break-words whitespace-normal overflow-hidden">
                   {note.title || "Untitled"}
@@ -179,4 +176,7 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
   );
 };
 
-export default Middle;
+export default React.memo(Middle, (prevProps, nextProps) => {
+  // Only re-render if refreshKey changes
+  return prevProps.refreshKey === nextProps.refreshKey;
+});

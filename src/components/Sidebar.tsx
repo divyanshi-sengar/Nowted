@@ -195,37 +195,37 @@ const Sidebar: React.FC = () => {
   }, []);
 
   // Delete Folder
-  const deleteFolder = async (folderId: string) => {
-    try {
-      // ✅ Get folder name first
-      const folderToDelete = folder.find(f => f.id === folderId);
-      const folderName = "Folder " + folderToDelete?.name || "Folder";
+  // const deleteFolder = async (folderId: string) => {
+  //   try {
+  //     // ✅ Get folder name first
+  //     const folderToDelete = folder.find(f => f.id === folderId);
+  //     const folderName = "Folder " + folderToDelete?.name || "Folder";
 
-      const response = await fetch(
-        `https://nowted-server.remotestate.com/folders/${folderId}`,
-        { method: "DELETE" }
-      );
-      if (!response.ok) throw new Error();
+  //     const response = await fetch(
+  //       `https://nowted-server.remotestate.com/folders/${folderId}`,
+  //       { method: "DELETE" }
+  //     );
+  //     if (!response.ok) throw new Error();
 
-      setFolder(prev =>
-        prev.map(f =>
-          f.id === folderId
-            ? { ...f, deletedAt: new Date().toISOString() }
-            : f
-        )
-      );
+  //     setFolder(prev =>
+  //       prev.map(f =>
+  //         f.id === folderId
+  //           ? { ...f, deletedAt: new Date().toISOString() }
+  //           : f
+  //       )
+  //     );
 
-      // ✅ Template string with backticks
-      toast.success(`"${folderName}" deleted`, {
-        autoClose: 2000,
-        onClose: () => navigate("/")
-      });
+  //     // ✅ Template string with backticks
+  //     toast.success(`"${folderName}" deleted`, {
+  //       autoClose: 2000,
+  //       onClose: () => navigate("/")
+  //     });
 
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to delete folder");
-    }
-  };
+  //   } catch (err) {
+  //     console.error(err);
+  //     toast.error("Failed to delete folder");
+  //   }
+  // };
 
   const confirmDeleteFolder = async () => {
     if (!folderToDelete) return;
