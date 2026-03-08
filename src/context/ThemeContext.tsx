@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useState, ReactNode, useEffect, useContext } from "react";
 
 type Theme = "light" | "dark";
