@@ -70,7 +70,10 @@ const Sidebar: React.FC = () => {
   const debouncedQuery = useDebounce(searchQuery, 500);
 
   const searchRef = useRef<HTMLDivElement>(null);
-
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const isFavorites = location.pathname === "/favorites";
+  const isTrash = location.pathname === "/trash";
+  const isArchived = location.pathname === "/archived";
 
   // Get Current Folder Id
   const getCurrentFolderId = () => {
@@ -362,7 +365,18 @@ const Sidebar: React.FC = () => {
           <Search
             size={18}
             className="cursor-pointer"
-            onClick={() => { setIsSearching(prev => !prev); setSearchQuery(""); setResults([]); }}
+            onClick={() => {
+              setIsSearching(prev => {
+                const newValue = !prev;
+                if (!prev) {
+                  // If opening search, focus the input after render
+                  setTimeout(() => searchInputRef.current?.focus(), 0);
+                }
+                return newValue;
+              });
+              setSearchQuery("");
+              setResults([]);
+            }}
           />
         </div>
 
@@ -376,6 +390,7 @@ const Sidebar: React.FC = () => {
         ) : (
           <div className="relative" ref={searchRef}>
             <input
+              ref={searchInputRef}
               type="text"
               autoFocus
               value={searchQuery}
@@ -448,8 +463,8 @@ const Sidebar: React.FC = () => {
                 key={item.id}
                 onClick={() => editingFolderId !== item.id && navigate(`/folders/${item.id}`)}
                 onDoubleClick={() => { setEditingFolderId(item.id); setEditedName(item.name); }}
-                className={`group w-full flex justify-between items-center px-5 py-1 cursor-pointer ${isActive ? "bg-primary" : "hover:bg-primary"}`}
-              >
+                className={`group w-full flex justify-between items-center px-5 py-1 cursor-pointer 
+  ${isActive ? "bg-primary" : "hover:bg-primary"}`}          >
                 <div className="flex items-center gap-3 w-full  py-[5px] overflow-hidden">
                   <img src={isActive ? foldericon : simpfolder} className="transition-all duration-200 w-5 h-5 flex-shrink-0 icon-theme" />
                   {editingFolderId === item.id ? (
@@ -486,14 +501,31 @@ const Sidebar: React.FC = () => {
       <div className="pb-5">
         <p className="px-5 text-sm text-main font-semibold mb-2">More</p>
         <ul>
-          <li className="flex items-center font-semibold gap-[10px] px-5 py-2 rounded cursor-pointer hover:bg-primary truncate" onClick={() => navigate("/favorites")}>
-            <img src={favourite} alt="" className="icon-theme" /> <span className="truncate">Favorites</span>
+          <li
+            onClick={() => navigate("/favorites")}
+            className={`flex items-center font-semibold gap-[10px] px-5 py-2 rounded cursor-pointer truncate
+      ${isFavorites ? "bg-primary" : "hover:bg-primary"}`}
+          >
+            <img src={favourite} alt="" className="icon-theme" />
+            <span className="truncate">Favorites</span>
           </li>
-          <li className="flex items-center font-semibold gap-[10px] px-5 py-2 rounded cursor-pointer hover:bg-primary truncate" onClick={() => navigate("/trash")}>
-            <img src={trash} alt="" className="icon-theme" /> <span className="truncate">Trash</span>
+
+          <li
+            onClick={() => navigate("/trash")}
+            className={`flex items-center font-semibold gap-[10px] px-5 py-2 rounded cursor-pointer truncate
+      ${isTrash ? "bg-primary" : "hover:bg-primary"}`}
+          >
+            <img src={trash} alt="" className="icon-theme" />
+            <span className="truncate">Trash</span>
           </li>
-          <li className="flex items-center font-semibold gap-[10px] px-5 py-2 rounded cursor-pointer hover:bg-primary truncate" onClick={() => navigate("/archived")}>
-            <img src={archieved} alt="" className="icon-theme" /> <span className="truncate">Archived Notes</span>
+
+          <li
+            onClick={() => navigate("/archived")}
+            className={`flex items-center font-semibold gap-[10px] px-5 py-2 rounded cursor-pointer truncate
+      ${isArchived ? "bg-primary" : "hover:bg-primary"}`}
+          >
+            <img src={archieved} alt="" className="icon-theme" />
+            <span className="truncate">Archived Notes</span>
           </li>
         </ul>
       </div>

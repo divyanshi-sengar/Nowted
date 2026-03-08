@@ -73,9 +73,6 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
         setRefreshKey((prev) => prev + 1);
         setSaveStatus("saved");
         setTimeout(() => setSaveStatus("idle"), 1500);
-
-        toast.success("Note saved");
-
       } catch (err) {
         console.error("Autosave failed", err);
         setSaveStatus("idle");

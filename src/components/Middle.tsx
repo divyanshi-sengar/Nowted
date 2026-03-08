@@ -33,6 +33,8 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
   const location = useLocation();
   // const selectedNoteId = noteId || location.pathname.split("/").pop();
   const selectedNoteId = noteId
+  const [selectedNote, setSelectedNote] = useState<string | null>(noteId || null);
+
 
   const isArchivedView = location.pathname.startsWith("/archived");
   const isFavoriteView = location.pathname.startsWith("/favorites");
@@ -118,7 +120,12 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
     return () => {
       isActive = false; // cancel previous fetch result
     };
-  }, [routeFolderId, noteId, location.pathname, refreshKey, refresh]);
+  }, [routeFolderId, location.pathname, refreshKey, refresh]);
+
+  useEffect(() => {
+  // Reset selected note whenever folder/view changes
+  setSelectedNote(noteId || null);
+}, [routeFolderId, isArchivedView, isFavoriteView, isTrashView, noteId]);
 
   const pageTitle = isArchivedView
     ? "Archived Notes"
@@ -139,20 +146,26 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
       ) : (
         <div className="flex-1 overflow-y-auto flex flex-col gap-5 pr-4">
           {notes.map(note => {
-            const isSelected = selectedNoteId === note.id;
             return (
               <div
                 key={note.id}
                 onClick={() => {
+                  setSelectedNote(note.id); // immediate highlight
+                  // Only navigate if you want to show the note in FullNote
                   if (isArchivedView) navigate(`/archived/notes/${note.id}`);
                   else if (isFavoriteView) navigate(`/favorites/notes/${note.id}`);
                   else if (isTrashView) navigate(`/trash/notes/${note.id}`);
                   else navigate(`/folders/${note.folderId}/notes/${note.id}`);
                 }}
-                className={`rounded p-5 cursor-pointer transition-colors
-${isSelected ? "bg-hover" : "bg-card hover:bg-hover"}`}
+                className={`rounded p-5 cursor-pointer transition-all duration-200
+    ${selectedNote === note.id
+                    ? "shadow-[0_0_10px_2px_rgba(59,130,246,0.4)] border-l-4 border-blue-500"
+                    : "bg-card hover:bg-hover border-l-4 border-transparent"
+                  }`}
               >
-                <div className="text-[18px] font-semibold text-main break-words whitespace-normal overflow-hidden">{note.title || "Untitled"}</div>
+                <div className="text-[18px] font-semibold text-main break-words whitespace-normal overflow-hidden">
+                  {note.title || "Untitled"}
+                </div>
                 <div className="flex gap-[10px] text-muted text-sm">
                   <p>{new Date(note.createdAt).toLocaleDateString()}</p>
                   <span className="truncate">{note.preview}</span>
