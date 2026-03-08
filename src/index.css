@@ -1,69 +1,103 @@
 @import "tailwindcss";
 
-
+/* ===== Default (Dark Theme) ===== */
 :root {
-  --color-sidebar: #121212;
-  --color-card: #1f1f1f;
-  --color-hover-blue: #312EB5;
-  --color-hover-dark: #2a2a2a;
+  --bg-main: #121212;
+  --bg-panel: #1c1c1c;
+  --bg-card: #232323;
+  --bg-hover: #2a2a2a;
+  --bg-primary: #312EB5;   /* bluish hover */
+
+  --text-main: #ffffff;
+  --text-muted: #a3a3a3;
+
+  --accent: #312EB5;
+  --danger: #dc2626;
 }
 
-body {
+/* ===== Light Theme ===== */
+[data-theme="light"] {
+  --bg-main: #f5f5f5;
+  --bg-panel: #ffffff;
+  --bg-card: #f0f0f0;
+  --bg-hover: #e5e5e5;
+  --bg-primary: #bebdf7;   /* soft bluish hover */
+
+  --text-main: #111111;
+  --text-muted: #555555;
+
+  --accent: #312EB5;
+  --danger: #dc2626;
+}
+
+/* ===== Base ===== */
+html, body, #root {
+  height: 100%;
+  background: var(--bg-main);
+  color: var(--text-main);
   font-family: 'Source Sans Pro', sans-serif;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
+/* ===== Scrollbar ===== */
 .scrollbar::-webkit-scrollbar {
   width: 6px;
 }
-
 .scrollbar::-webkit-scrollbar-thumb {
   background: #3a3a3a;
   border-radius: 10px;
 }
 
-html, body, #root {
-  height: 100%;
-  background-color:var(--color-sidebar);
+/* ===== Theme Utility Classes ===== */
+.bg-main      { background: var(--bg-main); }
+.bg-panel     { background: var(--bg-panel); }
+.bg-card      { background: var(--bg-card); }
+.bg-hover     { background: var(--bg-hover); }
+.bg-primary   { background: var(--bg-primary); }
+.bg-menu      { background: var(--bg-card); }
+
+.text-main    { color: var(--text-main); }
+.text-muted   { color: var(--text-muted); }
+
+.border-theme { border-color: var(--text-muted); }
+
+/* ===== Hover Utilities ===== */
+.hover\:bg-hover:hover     { background: var(--bg-hover); }
+.hover\:bg-primary:hover   { background: var(--bg-primary); }
+.hover\:bg-accent:hover    { background: var(--accent); }
+.hover\:bg-danger:hover    { background: var(--danger); }
+
+/* ===== SVG / Image Theme Fix ===== */
+/* Makes dark SVGs visible in dark mode */
+.img-theme {
+  filter: brightness(0) invert(1);
+  transition: filter 0.2s ease;
 }
 
-/* index.css */
-:root {
-  --bg-main: #121212;
-  --bg-panel: #1c1c1c;
-  --bg-card: #232323;
-  --text-main: #ffffff;
-  --text-muted: #a3a3a3;
+/* Revert in light mode */
+[data-theme="light"] .img-theme {
+  filter: none;
 }
 
-[data-theme="light"] {
-  --bg-main: #f5f5f5;
-  --bg-panel: #ffffff;
-  --bg-card: #f0f0f0;
-  --text-main: #111111;
-  --text-muted: #555555;
+/* ===== Smooth UI ===== */
+button, input, textarea, select {
+  transition: background 0.2s ease, color 0.2s ease, border 0.2s ease;
 }
 
-@theme{
-
-  --color-sidebar:#121212;
-  --color-text:white;
-  --font-nowted:"Kaushan_Script";
-  --color-main:#1f1f1f;
-  --color-main-hover:#2a2a2a;
-  --color-primary:#312EB5;
-
-  --color-middle:#1c1c1c;
-  --color-notebg:#232323;
-
-  --color-selectednote:#333333;
-
-  --color-dropdown:#2b2b2b;
-  --color-dropdown-item-hover:#3a3a3a;
-
-  --color-menu:#181a1b;
-  
+/* Theme-aware icon color */
+.icon-theme {
+  filter: brightness(0) invert(1); /* white in dark */
 }
 
+[data-theme="light"] .icon-theme {
+  filter: brightness(0) invert(0); /* black in light */
+}
 
+input, textarea {
+  color: var(--text-main);
+}
 
-
+::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}

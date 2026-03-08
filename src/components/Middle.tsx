@@ -129,13 +129,13 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
         : folderName || "Folder Notes";
 
   return (
-    <div className="p-5 h-full bg-middle flex flex-col gap-5">
-      <div className="text-[22px] font-semibold text-white shrink-0 break-words whitespace-normal">{pageTitle}</div>
+    <div className="p-5 h-full bg-panel text-main flex flex-col gap-5">
+      <div className="text-[22px] font-semibold text-main shrink-0 break-words whitespace-normal">{pageTitle}</div>
       {loading ? (
         // Show loader while loading
         <Loader />
       ) : notes.length === 0 ? (
-        <div className="text-gray-400 flex-1 flex items-center justify-center">No Notes</div>
+        <div className="text-muted flex-1 flex items-center justify-center">No Notes</div>
       ) : (
         <div className="flex-1 overflow-y-auto flex flex-col gap-5 pr-4">
           {notes.map(note => {
@@ -149,10 +149,11 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
                   else if (isTrashView) navigate(`/trash/notes/${note.id}`);
                   else navigate(`/folders/${note.folderId}/notes/${note.id}`);
                 }}
-                className={`rounded-[2px] p-5 flex flex-col gap-[15px] cursor-pointer hover:bg-main-hover transition-colors ${isSelected ? "bg-selectednote text-white" : "bg-notebg hover:bg-main-hover"}`}
+                className={`rounded p-5 cursor-pointer transition-colors
+${isSelected ? "bg-hover" : "bg-card hover:bg-hover"}`}
               >
-                <div className="text-[18px] font-semibold text-white break-words whitespace-normal overflow-hidden">{note.title || "Untitled"}</div>
-                <div className="flex gap-[10px] text-gray-400 text-sm">
+                <div className="text-[18px] font-semibold text-main break-words whitespace-normal overflow-hidden">{note.title || "Untitled"}</div>
+                <div className="flex gap-[10px] text-muted text-sm">
                   <p>{new Date(note.createdAt).toLocaleDateString()}</p>
                   <span className="truncate">{note.preview}</span>
                 </div>
