@@ -1,8 +1,10 @@
 import { useEffect, useState, useRef, useContext } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { NotesContext } from "../context/NotesContext";
+import { ThemeContext } from "../context/ThemeContext";
 
 import "./Sidebar.css";
+import "../index.css"
 import { useDebounce } from "../hooks/useDebounce";
 import { searchNotes } from "../services/notesservies";
 import { highlightText } from "../utils/highlightText";
@@ -47,6 +49,7 @@ const Sidebar: React.FC = () => {
   const [showInput, setShowInput] = useState(false);
   const [folder, setFolder] = useState<Folder[]>([]);
   const [recents, setrecent] = useState<RecentNote[]>([]);
+  const { theme, toggleTheme } = useContext(ThemeContext);
 
   const [editingFolderId, setEditingFolderId] = useState<string | null>(null);
   const [editedName, setEditedName] = useState("");
@@ -223,7 +226,7 @@ const Sidebar: React.FC = () => {
   };
 
   return (
-    <div className="h-full bg-[#121212] text-gray-300  flex flex-col">
+    <div className="h-full bg-sidebar  text-gray-300  flex flex-col">
 
       {/* Header */}
       <div className="px-5 pt-5 mb-6 flex flex-col gap-6">
@@ -231,6 +234,9 @@ const Sidebar: React.FC = () => {
           <div className="flex items-center gap-2">
             <h2 className="text-white font-normal text-[26px] font-[Kaushan_Script]">Nowted</h2>
             <img src={pen} alt="" className="h-[15px] relative -mt-3" />
+            <button onClick={toggleTheme}>
+              {theme === "dark" ? "🌙 Dark" : "☀️ Light"}
+            </button>
           </div>
           <Search
             size={18}
@@ -242,7 +248,7 @@ const Sidebar: React.FC = () => {
         {!isSearching ? (
           <button
             onClick={addNote}
-            className="flex items-center justify-center gap-2 bg-[#1f1f1f] hover:bg-[#2a2a2a] py-2 rounded text-sm font-semibold"
+            className="flex items-center justify-center gap-2 bg-main hover:bg-main-hover py-2 rounded text-sm font-semibold"
           >
             <Plus size={16} /> Add Note
           </button>
@@ -254,7 +260,7 @@ const Sidebar: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search notes..."
-              className="w-full bg-[#1f1f1f] px-3 py-2 rounded outline-none text-sm"
+              className="w-full bg-main px-3 py-2 rounded outline-none text-sm"
             />
             {loading && <div className="absolute top-full left-0 mt-2 text-xs text-gray-400">Searching...</div>}
             {results.length > 0 && (
@@ -263,7 +269,7 @@ const Sidebar: React.FC = () => {
                   <div
                     key={note.id}
                     onClick={() => { navigate(`/folders/${note.folderId}/notes/${note.id}`); setIsSearching(false); setSearchQuery(""); setResults([]); }}
-                    className="px-3 py-2 cursor-pointer hover:bg-[#2a2a2a] text-sm truncate"
+                    className="px-3 py-2 cursor-pointer hover:bg-main-hover text-sm truncate"
                   >
                     {highlightText(note.title, searchQuery)}
                   </div>
@@ -283,7 +289,7 @@ const Sidebar: React.FC = () => {
             <li
               key={note.id}
               onClick={() => navigate(`/folders/${note.folder.id}/notes/${note.id}`)}
-              className="w-full flex items-center font-semibold gap-3 px-5 py-2 cursor-pointer hover:bg-[#312EB5] transition"
+              className="w-full flex items-center font-semibold gap-3 px-5 py-2 cursor-pointer hover:bg-primary transition"
             >
               <img src={documentIcon1} alt="" />
               <span className="truncate">{note.title || "Untitled"}</span>
@@ -311,7 +317,7 @@ const Sidebar: React.FC = () => {
                 onChange={(e) => setFolderName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && createFolder()}
                 placeholder="My New Folder"
-                className="w-full bg-[#1f1f1f] text-white px-3 py-2 rounded outline-none"
+                className="w-full bg-main text-white px-3 py-2 rounded outline-none"
               />
             </li>
           )}
@@ -323,7 +329,7 @@ const Sidebar: React.FC = () => {
                 key={item.id}
                 onClick={() => editingFolderId !== item.id && navigate(`/folders/${item.id}`)}
                 onDoubleClick={() => { setEditingFolderId(item.id); setEditedName(item.name); }}
-                className={`group w-full flex justify-between items-center px-5 py-1 cursor-pointer ${isActive ? "bg-[#312EB5]" : "hover:bg-[#312EB5]"}`}
+                className={`group w-full flex justify-between items-center px-5 py-1 cursor-pointer ${isActive ? "bg-primary" : "hover:bg-primary"}`}
               >
                 <div className="flex items-center gap-3 w-full  py-[5px] overflow-hidden">
                   <img src={isActive ? foldericon : simpfolder} className="transition-all duration-200 w-5 h-5 flex-shrink-0" />
@@ -336,7 +342,7 @@ const Sidebar: React.FC = () => {
                         if (e.key === "Enter") renameFolder(item.id);
                         if (e.key === "Escape") setEditingFolderId(null);
                       }}
-                      className="bg-[#2a2a2a] px-2 py-1 rounded w-full outline-none"
+                      className="bg-main-hover px-2 py-1 rounded w-full outline-none"
                     />
                   ) : (
                     <span className="font-semibold truncate ">{item.name}</span>
@@ -357,58 +363,19 @@ const Sidebar: React.FC = () => {
       <div className="pb-5">
         <p className="px-5 text-sm text-white font-semibold mb-2">More</p>
         <ul>
-          <li className="flex items-center font-semibold gap-[10px] px-5 py-2 rounded cursor-pointer hover:bg-[#312EB5] truncate" onClick={() => navigate("/favorites")}>
+          <li className="flex items-center font-semibold gap-[10px] px-5 py-2 rounded cursor-pointer hover:bg-primary truncate" onClick={() => navigate("/favorites")}>
             <img src={favourite} alt="" /> <span className="truncate">Favorites</span>
           </li>
-          <li className="flex items-center font-semibold gap-[10px] px-5 py-2 rounded cursor-pointer hover:bg-[#312EB5] truncate" onClick={() => navigate("/trash")}>
+          <li className="flex items-center font-semibold gap-[10px] px-5 py-2 rounded cursor-pointer hover:bg-primary truncate" onClick={() => navigate("/trash")}>
             <img src={trash} alt="" /> <span className="truncate">Trash</span>
           </li>
-          <li className="flex items-center font-semibold gap-[10px] px-5 py-2 rounded cursor-pointer hover:bg-[#312EB5] truncate" onClick={() => navigate("/archived")}>
+          <li className="flex items-center font-semibold gap-[10px] px-5 py-2 rounded cursor-pointer hover:bg-primary truncate" onClick={() => navigate("/archived")}>
             <img src={archieved} alt="" /> <span className="truncate">Archived Notes</span>
           </li>
         </ul>
       </div>
 
-      {/* Add Note Modal */}
-      {/* {form && (
-        <div className="fixed inset-0 backdrop-blur-[1px] flex items-center justify-center">
-          <div className="bg-[#1f1f1f] w-[400px] p-8 rounded-xl shadow-lg flex flex-col gap-6">
-            <h2 className="text-white text-2xl font-semibold text-center">Add Note</h2>
-            <div className="flex flex-col gap-2">
-              <label className="text-gray-300 text-sm">Title</label>
-              <input
-                type="text"
-                value={noteTitle}
-                onChange={(e) => setNoteTitle(e.target.value)}
-                placeholder="Enter note title"
-                className="bg-[#2a2a2a] text-white px-3 py-2 rounded-md outline-none"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <label className="text-gray-300 text-sm">Description</label>
-              <textarea
-                rows={4}
-                value={noteContent}
-                onChange={(e) => setNoteContent(e.target.value)}
-                placeholder="Enter note description"
-                className="bg-[#2a2a2a] text-white px-3 py-2 rounded-md outline-none resize-none"
-              />
-            </div>
-            <button
-              onClick={addNote}
-              className="bg-[#312EB5] hover:bg-[#2623a0] text-white py-2 rounded-md font-semibold transition duration-300"
-            >
-              Add Note
-            </button>
-            <button
-              onClick={() => setForm(false)}
-              className="text-gray-400 text-sm hover:text-white"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      )} */}
+      
     </div>
   );
 };

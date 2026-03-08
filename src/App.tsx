@@ -5,6 +5,7 @@ import FullNote from "./components/FullNote";
 import Note from "./components/Note";
 import React, { useState } from "react";
 import Restore from "./components/Restore";
+import { ThemeProvider } from "./context/ThemeContext";
 
 import { NotesProvider } from "./context/NotesContext";
 
@@ -14,6 +15,7 @@ const App: React.FC = () => {
   
 
   return (
+    // <ThemeProvider>
     <NotesProvider>
       <div className="flex h-screen w-full">
 
@@ -63,6 +65,7 @@ const App: React.FC = () => {
         </div>
       </div>
     </NotesProvider>
+    // </ThemeProvider>
   );
 };
 

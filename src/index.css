@@ -23,8 +23,47 @@ body {
 
 html, body, #root {
   height: 100%;
-  background-color: #121212;
+  background-color:var(--color-sidebar);
 }
+
+/* index.css */
+:root {
+  --bg-main: #121212;
+  --bg-panel: #1c1c1c;
+  --bg-card: #232323;
+  --text-main: #ffffff;
+  --text-muted: #a3a3a3;
+}
+
+[data-theme="light"] {
+  --bg-main: #f5f5f5;
+  --bg-panel: #ffffff;
+  --bg-card: #f0f0f0;
+  --text-main: #111111;
+  --text-muted: #555555;
+}
+
+@theme{
+
+  --color-sidebar:#121212;
+  --color-text:white;
+  --font-nowted:"Kaushan_Script";
+  --color-main:#1f1f1f;
+  --color-main-hover:#2a2a2a;
+  --color-primary:#312EB5;
+
+  --color-middle:#1c1c1c;
+  --color-notebg:#232323;
+
+  --color-selectednote:#333333;
+
+  --color-dropdown:#2b2b2b;
+  --color-dropdown-item-hover:#3a3a3a;
+
+  --color-menu:#181a1b;
+  
+}
+
 
 
 

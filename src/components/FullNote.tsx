@@ -1,4 +1,4 @@
-import React, { useState, useEffect,useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
@@ -45,12 +45,13 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
   const navigate = useNavigate();
 
   const [folder, setFolder] = useState<Folder[]>([]);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
 
   const [showMenu, setShowMenu] = useState(false);
   const [note, setNote] = useState<Note | null>(null);
 
-  const debouncedTitle = useDebounce(note?.title, 500);
-  const debouncedContent = useDebounce(note?.content, 300);
+  const debouncedTitle = useDebounce(note?.title, 1000);
+  const debouncedContent = useDebounce(note?.content, 1000);
 
   // const isFirstRender = useRef(true);
   const isTyping = useRef(false);
@@ -58,28 +59,35 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
   useEffect(() => {
     if (!note?.id) return;
 
-
     const updateNote = async () => {
       try {
+        setSaveStatus("saving"); // 🟡 show Saving...
+
         await fetch(`https://nowted-server.remotestate.com/notes/${note.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            title: note.title,
-            content: note.content
+            title: debouncedTitle,
+            content: debouncedContent
           })
         });
 
-        setRefreshKey(prev => prev + 1);
+        setRefreshKey((prev) => prev + 1);
+
+        setSaveStatus("saved"); // 🟢 show Saved ✓
+
+        // hide after 1.5s
+        setTimeout(() => setSaveStatus("idle"), 1500);
 
       } catch (err) {
         console.error("Autosave failed", err);
+        setSaveStatus("idle");
       }
     };
 
     updateNote();
 
-  }, [debouncedTitle, debouncedContent,note?.id]);
+  }, [debouncedTitle, debouncedContent, note?.id, setRefreshKey]);
 
   useEffect(() => {
     const getFolders = async () => {
@@ -121,39 +129,39 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
   }, [noteId]);
 
   const moveNoteToFolder = async (folderId: string) => {
-  if (!note) return;
+    if (!note) return;
 
-  try {
-    await fetch(`https://nowted-server.remotestate.com/notes/${note.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ folderId }),
-    });
+    try {
+      await fetch(`https://nowted-server.remotestate.com/notes/${note.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folderId }),
+      });
 
-    // find the selected folder
-    const selectedFolder = folder.find((f) => f.id === folderId);
+      // find the selected folder
+      const selectedFolder = folder.find((f) => f.id === folderId);
 
-    // update local state so UI updates immediately
-    setNote((prev) =>
-      prev
-        ? {
+      // update local state so UI updates immediately
+      setNote((prev) =>
+        prev
+          ? {
             ...prev,
             folder: {
               id: folderId,
               name: selectedFolder?.name || "",
             },
           }
-        : prev
-    );
+          : prev
+      );
 
-    navigate(`/folders/${folderId}/notes/${note.id}`);
-    setRefreshKey((prev) => prev + 1);
+      navigate(`/folders/${folderId}/notes/${note.id}`);
+      setRefreshKey((prev) => prev + 1);
 
 
-  } catch (err) {
-    console.error("Move note failed:", err);
-  }
-};
+    } catch (err) {
+      console.error("Move note failed:", err);
+    }
+  };
 
   // Toggle favorite
   const handleFavourite = async () => {
@@ -227,7 +235,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
   };
 
   return (
-    <div className="font-['Source_Sans_Pro'] h-full bg-[#121212] text-white ">
+    <div className="font-['Source_Sans_Pro'] h-full bg-sidebar text-white ">
       <div className="p-12 flex flex-col gap-4 h-full">
 
         {/* Top Section */}
@@ -235,21 +243,34 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
           {/* <h1 className="text-[32px] font-semibold break-words whitespace-normal overflow-hidden">{note?.title}</h1> */}
           <input
             value={note?.title || ""}
-            placeholder="Untitled" 
-            onChange={(e) =>{
-              isTyping.current=true;
+            placeholder="Untitled"
+            onChange={(e) => {
+              isTyping.current = true;
               setNote(prev => prev ? { ...prev, title: e.target.value } : prev)
             }}
             className="text-[32px] font-semibold bg-transparent outline-none w-full break-words whitespace-normal"
           />
-
+          <div className="flex items-center gap-3">
+            {saveStatus === "saving" && (
+              <div className="flex items-center gap-2 text-yellow-400 text-sm">
+                <div className="w-3 h-3 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+                Saving...
+              </div>
+            )}
+            {saveStatus === "saved" && (
+              <div className="flex items-center gap-2 text-green-400 text-sm">
+                <span>Saved</span>
+                <span>✓</span>
+              </div>
+            )}
+          </div>
           <div className="relative">
             <button onClick={e => { e.stopPropagation(); setShowMenu(!showMenu); }}>
               <img src={dots} alt="menu" className="cursor-pointer" />
             </button>
 
             {showMenu && (
-              <div className="absolute right-0 top-full mt-2 w-52 bg-[#2b2b2b] rounded-md shadow-xl z-50">
+              <div className="absolute right-0 top-full mt-2 w-52 bg-dropdown rounded-md shadow-xl z-50">
 
                 <button
                   onClick={(e) => {
@@ -258,7 +279,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
                     setShowMenu(false);
                   }}
                   className="flex items-center gap-3 px-4 py-3 
-             hover:bg-[#3a3a3a] w-full text-left rounded-t-xl"
+             hover:bg-dropdown-item-hover w-full text-left rounded-t-xl"
                 >
                   <Star
                     className={`w-5 h-5 transition-all duration-200 ${note?.isFavorite
@@ -269,7 +290,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
                   {note?.isFavorite ? "Remove favourites" : "Add to favourites"}
                 </button>
 
-                <button onClick={handleArchive} className="flex items-center gap-3 px-4 py-3 hover:bg-[#3a3a3a] w-full text-left">
+                <button onClick={handleArchive} className="flex items-center gap-3 px-4 py-3 hover:bg-dropdown-item-hover w-full text-left">
                   <img src={archieved} alt="" /> {note?.isArchived ? "Remove from Archive" : "Archive"}
                 </button>
 
@@ -302,12 +323,12 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
               <a >Folder</a>
             </div>
             <Menu as="div" className="relative inline-block">
-              <MenuButton className="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-xs hover:bg-[#312EB5] ">
+              <MenuButton className="inline-flex w-full justify-center gap-x-1.5 rounded-md bg-menu px-3 py-2 text-sm font-semibold text-white shadow-xs hover:bg-primary ">
                 {!note?.folder?.name ? "" : (note?.folder?.name.length > 10 ? note?.folder?.name.slice(0, 10) + "..." : note?.folder?.name)}
                 <ChevronDownIcon className="-mr-1 size-5 text-gray-400" />
               </MenuButton>
 
-              <MenuItems className="absolute left-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white shadow-lg">
+              <MenuItems className="absolute left-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-menu shadow-lg">
 
                 {/* Scrollable container */}
                 <div className="py-1 max-h-48 overflow-y-auto scrollbar">
@@ -317,9 +338,9 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
                       <MenuItem key={item.id}>
                         <button
                           onClick={() => moveNoteToFolder(item.id)}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-[#312EB5]"
+                          className="block w-full text-left px-4 py-2 text-sm text-white hover:bg-primary"
                         >
-                          {item.name.length > 10 ? item.name.slice(0, 10) + "..." : item.name}
+                          {item.name.length > 15 ? item.name.slice(0, 10) + "..." : item.name}
                         </button>
                       </MenuItem>
                     ))}
