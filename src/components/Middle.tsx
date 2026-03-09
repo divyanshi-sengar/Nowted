@@ -39,87 +39,149 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
   const isFavoriteView = location.pathname.startsWith("/favorites");
   const isTrashView = location.pathname.startsWith("/trash");
 
+  const viewMode =
+    location.pathname.startsWith("/archived") ? "archived" :
+      location.pathname.startsWith("/favorites") ? "favorites" :
+        location.pathname.startsWith("/trash") ? "trash" :
+          "folder";
 
   useEffect(() => {
-    let isActive = true;
-    const fetchNotes = async () => {
-      try {
-        setLoading(true);
+  let isActive = true;
 
-        let folderId = routeFolderId;
+  const fetchNotes = async () => {
+    try {
+      setLoading(true);
 
-        // If noteId exists but no folderId, fetch note to get folderId
-        if (!folderId && noteId) {
-          const noteRes = await fetch(`https://nowted-server.remotestate.com/notes/${noteId}`);
-          const noteData = await noteRes.json();
-          folderId = noteData.note.folder.id;
-        }
+      let folderId = routeFolderId;
 
-        // Determine fetch URL based on view
-        let url = "";
-        if (isArchivedView) url = "https://nowted-server.remotestate.com/notes?archived=true&favorite=false&deleted=false&limit=10";
-        else if (isFavoriteView) url = "https://nowted-server.remotestate.com/notes?archived=false&favorite=true&deleted=false&limit=10";
-        else if (isTrashView) url = "https://nowted-server.remotestate.com/notes?archived=false&favorite=false&deleted=true&limit=10";
-        else if (folderId) url = `https://nowted-server.remotestate.com/notes?folderId=${folderId}&limit=10`;
-        else {
-          setNotes([]);
-          setLoading(false);
-          return;
-        }
+      // If opened directly via note URL, fetch its folder
+      if (!folderId && noteId) {
+        const noteRes = await fetch(`https://nowted-server.remotestate.com/notes/${noteId}`);
+        const noteData = await noteRes.json();
+        folderId = noteData.note.folder.id;
+      }
 
-        const res = await fetch(url);
+      const base = "https://nowted-server.remotestate.com/notes";
+      let fetchedNotes: Note[] = [];
+
+      // =========================
+      // VIEW: ARCHIVED
+      // =========================
+      if (viewMode === "archived") {
+        const res = await fetch(`${base}?archived=true&deleted=false&limit=10`);
         const data = await res.json();
+        if (!isActive) return;
+        fetchedNotes = data.notes ?? [];
+      }
+
+      // =========================
+      // VIEW: FAVORITES (archived true + false)
+      // =========================
+      else if (viewMode === "favorites") {
+        const favBase = `${base}?favorite=true&deleted=false&limit=10`;
+
+        const [archTrueRes, archFalseRes] = await Promise.all([
+          fetch(`${favBase}&archived=true`),
+          fetch(`${favBase}&archived=false`)
+        ]);
+
+        const [archTrueData, archFalseData] = await Promise.all([
+          archTrueRes.json(),
+          archFalseRes.json()
+        ]);
 
         if (!isActive) return;
 
-        const fetchedNotes: Note[] = Array.isArray(data.notes) ? data.notes : [];
+        const notesTrue: Note[] = archTrueData.notes ?? [];
+        const notesFalse: Note[] = archFalseData.notes ?? [];
 
-        console.log(fetchedNotes);
-        // Filter notes based on view
-        let filteredNotes: Note[] = [];
-        if (isArchivedView) {
-          filteredNotes = fetchedNotes.filter(n => n.isArchived && !n.isFavorite && !n.deletedAt); // show all archived notes
-          console.log(filteredNotes)
-        } else if (isFavoriteView) {
-          filteredNotes = fetchedNotes.filter(n => n.isFavorite && !n.deletedAt && !n.isArchived);
-        } else if (isTrashView) {
-          filteredNotes = fetchedNotes.filter(n => n.deletedAt != null && !n.isArchived && !n.isFavorite);
-        } else if (folderId) {
-          filteredNotes = fetchedNotes.filter(
-            n => n.folderId === folderId && !n.isArchived && !n.deletedAt
-          );
+        // Merge + remove duplicates
+        fetchedNotes = Array.from(
+          new Map([...notesTrue, ...notesFalse].map(n => [n.id, n])).values()
+        );
+
+        // Sort by latest time
+        fetchedNotes.sort((a, b) =>
+          new Date(b.updatedAt || b.createdAt).getTime() -
+          new Date(a.updatedAt || a.createdAt).getTime()
+        );
+      }
+
+      // =========================
+      // VIEW: TRASH
+      // =========================
+      else if (viewMode === "trash") {
+        const res = await fetch(`${base}?deleted=true&limit=30`);
+        const data = await res.json();
+        if (!isActive) return;
+        fetchedNotes = data.notes ?? [];
+      }
+
+      // =========================
+      // VIEW: FOLDER
+      // =========================
+      else if (folderId) {
+        const res = await fetch(`${base}?folderId=${folderId}&limit=10`);
+        const data = await res.json();
+        if (!isActive) return;
+        fetchedNotes = data.notes ?? [];
+      }
+
+      // =========================
+      // NO VIEW
+      // =========================
+      else {
+        if (isActive) {
+          setNotes([]);
+          setLoading(false);
         }
+        return;
+      }
 
-        console.log(filteredNotes)
+      // =========================
+      // FINAL FILTERING
+      // =========================
+      const filteredNotes =
+        viewMode === "archived"
+          ? fetchedNotes.filter(n => n.isArchived && !n.deletedAt)
+          : viewMode === "favorites"
+            ? fetchedNotes.filter(n => n.isFavorite && !n.deletedAt)
+            : viewMode === "trash"
+              ? fetchedNotes.filter(n => n.deletedAt != null)
+              : folderId
+                ? fetchedNotes.filter(n => n.folderId === folderId && !n.isArchived && !n.deletedAt)
+                : [];
 
-        setNotes(filteredNotes);
+      setNotes(filteredNotes);
 
-        // Set folder name for folder view
-        if (folderId && filteredNotes.length > 0) {
+      // =========================
+      // Folder Name (Folder View)
+      // =========================
+      if (viewMode === "folder" && folderId) {
+        if (filteredNotes.length > 0) {
           setFolderName(filteredNotes[0].folder.name);
-        }
-        else if (folderId) {
+        } else {
           const folderRes = await fetch(`https://nowted-server.remotestate.com/folders`);
           const folderData = await folderRes.json();
-
           const currentFolder = folderData.folders.find((f: Folder) => f.id === folderId);
           setFolderName(currentFolder?.name || "");
         }
-
-      } catch (error) {
-        console.error("Error fetching notes:", error);
-        setNotes([]);
-      } finally {
-        if (isActive) setLoading(false);
       }
-    };
 
-    fetchNotes();
+    } catch (error) {
+      console.error("Error fetching notes:", error);
+      if (isActive) setNotes([]);
+    } finally {
+      if (isActive) setLoading(false);
+    }
+  };
 
-    return () => {
-      isActive = false; // cancel previous fetch result
-    };
-  }, [routeFolderId, refreshKey, location.pathname,refresh]);
+  fetchNotes();
+
+  return () => {
+    isActive = false;
+  };
+}, [routeFolderId, noteId, refreshKey, viewMode, refresh]);
 
   useEffect(() => {
     setSelectedNote(noteId || null);

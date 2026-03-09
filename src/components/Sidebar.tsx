@@ -61,7 +61,7 @@ const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const { refresh } = useContext(NotesContext);
+  const { refresh, toggleRefresh } = useContext(NotesContext);
 
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -245,10 +245,12 @@ const Sidebar: React.FC = () => {
         )
       );
 
-      toast.success(`"${folderToDelete.name}" deleted`, {
-        autoClose: 2000,
-        onClose: () => navigate("/")
-      });
+      toast.success(`"${folderToDelete.name}" deleted`);
+
+      setTimeout(() => {
+        toggleRefresh();
+        navigate("/");
+      }, 0);
 
     } catch (err) {
       console.error(err);
@@ -318,6 +320,13 @@ const Sidebar: React.FC = () => {
       toast.error("Failed to rename folder");
     }
   };
+
+  const getCurrentNoteId = () => {
+    const match = location.pathname.match(/\/notes\/([^/]+)/);
+    return match ? match[1] : null;
+  };
+
+  const currentNoteId = getCurrentNoteId();
 
   return (
     <div className="h-full bg-main text-main flex flex-col">
@@ -419,16 +428,21 @@ const Sidebar: React.FC = () => {
         <p className="px-5 text-sm text-main font-semibold mb-2">Recents</p>
         {/* <ul className="list-none p-0 m-0"> */}
         <ul>
-          {recents.map((note) => (
-            <li
-              key={note.id}
-              onClick={() => navigate(`/folders/${note.folder.id}/notes/${note.id}`)}
-              className="w-full flex items-center font-semibold gap-3 px-5 py-2 cursor-pointer hover:bg-primary transition"
-            >
-              <img src={documentIcon1} alt="" className="icon-theme" />
-              <span className="truncate">{note.title || "Untitled"}</span>
-            </li>
-          ))}
+          {recents.map((note) => {
+            const isActive = currentNoteId === note.id;
+
+            return (
+              <li
+                key={note.id}
+                onClick={() => navigate(`/folders/${note.folder.id}/notes/${note.id}`)}
+                className={`w-full flex items-center font-semibold gap-3 px-5 py-2 cursor-pointer transition
+        ${isActive ? "bg-primary" : "hover:bg-primary"}`}
+              >
+                <img src={documentIcon1} alt="" className="icon-theme" />
+                <span className="truncate">{note.title || "Untitled"}</span>
+              </li>
+            );
+          })}
         </ul>
       </div>
 
