@@ -1,13 +1,12 @@
 @import "tailwindcss";
 
-/* ===== Default (Dark Theme) ===== */
+/*  Default (Dark Theme) */
 :root {
   --bg-main: #121212;
   --bg-panel: #1c1c1c;
   --bg-card: #232323;
   --bg-hover: #2a2a2a;
-  --bg-primary: #312EB5;   /* bluish hover */
-
+  --bg-primary: #312EB5;   
   --text-main: #ffffff;
   --text-muted: #a3a3a3;
 
@@ -15,13 +14,13 @@
   --danger: #dc2626;
 }
 
-/* ===== Light Theme ===== */
+/* Light Theme */
 [data-theme="light"] {
   --bg-main: #f5f5f5;
   --bg-panel: #ffffff;
   --bg-card: #f0f0f0;
   --bg-hover: #e5e5e5;
-  --bg-primary: #bebdf7;   /* soft bluish hover */
+  --bg-primary: #bebdf7;  
 
   --text-main: #111111;
   --text-muted: #555555;
@@ -30,7 +29,7 @@
   --danger: #dc2626;
 }
 
-/* ===== Base ===== */
+/* Base */
 html, body, #root {
   height: 100%;
   background: var(--bg-main);
@@ -39,7 +38,7 @@ html, body, #root {
   transition: background 0.2s ease, color 0.2s ease;
 }
 
-/* ===== Scrollbar ===== */
+/*scrollbar*/
 .scrollbar::-webkit-scrollbar {
   width: 6px;
 }
@@ -48,7 +47,7 @@ html, body, #root {
   border-radius: 10px;
 }
 
-/* ===== Theme Utility Classes ===== */
+/*  Theme Utility Classes  */
 .bg-main      { background: var(--bg-main); }
 .bg-panel     { background: var(--bg-panel); }
 .bg-card      { background: var(--bg-card); }
@@ -61,14 +60,13 @@ html, body, #root {
 
 .border-theme { border-color: var(--text-muted); }
 
-/* ===== Hover Utilities ===== */
+/*Hover Utilities  */
 .hover\:bg-hover:hover     { background: var(--bg-hover); }
 .hover\:bg-primary:hover   { background: var(--bg-primary); }
 .hover\:bg-accent:hover    { background: var(--accent); }
 .hover\:bg-danger:hover    { background: var(--danger); }
 
-/* ===== SVG / Image Theme Fix ===== */
-/* Makes dark SVGs visible in dark mode */
+/* image Theme Fix*/
 .img-theme {
   filter: brightness(0) invert(1);
   transition: filter 0.2s ease;
@@ -79,18 +77,18 @@ html, body, #root {
   filter: none;
 }
 
-/* ===== Smooth UI ===== */
+/* Smooth UI */
 button, input, textarea, select {
   transition: background 0.2s ease, color 0.2s ease, border 0.2s ease;
 }
 
 /* Theme-aware icon color */
 .icon-theme {
-  filter: brightness(0) invert(1); /* white in dark */
+  filter: brightness(0) invert(1); 
 }
 
 [data-theme="light"] .icon-theme {
-  filter: brightness(0) invert(0); /* black in light */
+  filter: brightness(0) invert(0); 
 }
 
 input, textarea {

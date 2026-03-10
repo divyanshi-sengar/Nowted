@@ -32,6 +32,7 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
   const [loading, setLoading] = useState(false);
   const { refresh } = useContext(NotesContext);
 
+  
   const navigate = useNavigate();
   const location = useLocation();
   const [selectedNote, setSelectedNote] = useState<string | null>(noteId || null);
@@ -243,3 +244,4 @@ export default React.memo(Middle, (prevProps, nextProps) => {
   // Only re-render if refreshKey changes
   return prevProps.refreshKey === nextProps.refreshKey;
 });
+

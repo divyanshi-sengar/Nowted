@@ -3,15 +3,15 @@
   display: none;
 }
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;     /* Firefox */
+  -ms-overflow-style: none;  
+  scrollbar-width: none;     
 }
 /* thin scrollbar */
 .scrollbar::-webkit-scrollbar {
   width: 4px;
 }
 
-/* scrollbar thumb (the moving bar) */
+/* scrollbar thumb */
 .scrollbar::-webkit-scrollbar-thumb {
   background-color: rgba(150,150,150,0.5);
   border-radius: 10px;
