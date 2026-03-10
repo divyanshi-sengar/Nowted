@@ -3,7 +3,8 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
 import { useTheme } from "../context/ThemeContext";
-import { toast, ToastContainer } from "react-toastify";
+// import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-toastify";
 
 import calendar from '../images/calendar-icon.svg'
 import simpfolder from '../images/simp-folder.svg'

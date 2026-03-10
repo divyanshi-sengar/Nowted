@@ -21,6 +21,8 @@ interface Note {
   isFavorite: boolean;
   deletedAt?: string | null;
   createdAt: string;
+
+  updatedAt?: string;
 }
 
 const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
@@ -64,9 +66,9 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
       const base = "https://nowted-server.remotestate.com/notes";
       let fetchedNotes: Note[] = [];
 
-      // =========================
-      // VIEW: ARCHIVED
-      // =========================
+
+      // view archived
+
       if (viewMode === "archived") {
         const res = await fetch(`${base}?archived=true&deleted=false&limit=10`);
         const data = await res.json();
@@ -74,9 +76,9 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
         fetchedNotes = data.notes ?? [];
       }
 
-      // =========================
+
       // VIEW: FAVORITES (archived true + false)
-      // =========================
+
       else if (viewMode === "favorites") {
         const favBase = `${base}?favorite=true&deleted=false&limit=10`;
 
@@ -107,9 +109,9 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
         );
       }
 
-      // =========================
+
       // VIEW: TRASH
-      // =========================
+
       else if (viewMode === "trash") {
         const res = await fetch(`${base}?deleted=true&limit=30`);
         const data = await res.json();
@@ -117,9 +119,9 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
         fetchedNotes = data.notes ?? [];
       }
 
-      // =========================
+
       // VIEW: FOLDER
-      // =========================
+
       else if (folderId) {
         const res = await fetch(`${base}?folderId=${folderId}&limit=10`);
         const data = await res.json();
@@ -127,9 +129,9 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
         fetchedNotes = data.notes ?? [];
       }
 
-      // =========================
+      
       // NO VIEW
-      // =========================
+   
       else {
         if (isActive) {
           setNotes([]);
@@ -138,9 +140,9 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
         return;
       }
 
-      // =========================
+ 
       // FINAL FILTERING
-      // =========================
+  
       const filteredNotes =
         viewMode === "archived"
           ? fetchedNotes.filter(n => n.isArchived && !n.deletedAt)
@@ -154,9 +156,8 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
 
       setNotes(filteredNotes);
 
-      // =========================
       // Folder Name (Folder View)
-      // =========================
+    
       if (viewMode === "folder" && folderId) {
         if (filteredNotes.length > 0) {
           setFolderName(filteredNotes[0].folder.name);
