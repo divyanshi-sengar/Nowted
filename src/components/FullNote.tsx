@@ -57,7 +57,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
 
   useEffect(() => {
     if (!note?.id) return;
-    if (!isTyping.current) return; // <-- only save if user typed
+    if (!isTyping.current) return; 
 
     const updateNote = async () => {
       try {
@@ -73,11 +73,11 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
         });
 
         setSaveStatus("saved");
-        setRefreshKey((prev) => prev + 1); // <-- now triggers Middle only after typing
+        setRefreshKey((prev) => prev + 1); 
 
         setTimeout(() => setSaveStatus("idle"), 1500);
 
-        isTyping.current = false; // <-- reset after save
+        isTyping.current = false; 
       } catch (err) {
         console.error("Autosave failed", err);
         setSaveStatus("idle");
@@ -218,7 +218,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
   const handleTrash = async () => {
     if (!note) return;
     try {
-      // Step 1 — clear states
+     
       await fetch(`https://nowted-server.remotestate.com/notes/${noteId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -228,7 +228,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
         }),
       });
 
-      // Step 2 — soft delete (server sets deletedAt)
+    //  delete
       await fetch(`https://nowted-server.remotestate.com/notes/${noteId}`, {
         method: "DELETE"
       });

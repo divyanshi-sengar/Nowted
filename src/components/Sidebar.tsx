@@ -225,7 +225,7 @@ const Sidebar: React.FC = () => {
   //     console.error(err);
   //     toast.error("Failed to delete folder");
   //   }
-  // };
+  // }
 
   const confirmDeleteFolder = async () => {
     if (!folderToDelete) return;

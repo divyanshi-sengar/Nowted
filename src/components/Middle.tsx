@@ -1,10 +1,9 @@
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { useState, useEffect, useContext } from "react";
-import { NotesContext } from "../context/NotesContext"; // your NotesContext
+import { useState, useEffect, useContext, useRef, useCallback } from "react";
+import { NotesContext } from "../context/NotesContext";
 import React from "react";
 
 import Loader from "../components/Loader";
-
 import "./Sidebar.css";
 
 interface MiddleProps { refreshKey: number }
@@ -21,210 +20,201 @@ interface Note {
   isFavorite: boolean;
   deletedAt?: string | null;
   createdAt: string;
-
   updatedAt?: string;
 }
 
+const LIMIT = 10;
+
 const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
   const { folderId: routeFolderId, noteId } = useParams<{ folderId?: string; noteId?: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { refresh } = useContext(NotesContext);
+
   const [notes, setNotes] = useState<Note[]>([]);
   const [folderName, setFolderName] = useState<string>("");
   const [loading, setLoading] = useState(false);
-  const { refresh } = useContext(NotesContext);
 
-  
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [visibleCount, setVisibleCount] = useState(LIMIT);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
   const [selectedNote, setSelectedNote] = useState<string | null>(noteId || null);
-
 
   const isArchivedView = location.pathname.startsWith("/archived");
   const isFavoriteView = location.pathname.startsWith("/favorites");
   const isTrashView = location.pathname.startsWith("/trash");
 
   const viewMode =
-    location.pathname.startsWith("/archived") ? "archived" :
-      location.pathname.startsWith("/favorites") ? "favorites" :
-        location.pathname.startsWith("/trash") ? "trash" :
+    isArchivedView ? "archived" :
+      isFavoriteView ? "favorites" :
+        isTrashView ? "trash" :
           "folder";
 
+  // fetch notes
   useEffect(() => {
-  let isActive = true;
+    let isActive = true;
 
-  const fetchNotes = async () => {
-    try {
-      setLoading(true);
+    const fetchNotes = async () => {
+      try {
+        setLoading(true);
+        let folderId = routeFolderId;
 
-      let folderId = routeFolderId;
+        if (!folderId && noteId) {
+          const noteRes = await fetch(`https://nowted-server.remotestate.com/notes/${noteId}`);
+          const noteData = await noteRes.json();
+          folderId = noteData.note.folder.id;
+        }
 
-      // If opened directly via note URL, fetch its folder
-      if (!folderId && noteId) {
-        const noteRes = await fetch(`https://nowted-server.remotestate.com/notes/${noteId}`);
-        const noteData = await noteRes.json();
-        folderId = noteData.note.folder.id;
-      }
+        const base = "https://nowted-server.remotestate.com/notes";
+        let fetchedNotes: Note[] = [];
 
-      const base = "https://nowted-server.remotestate.com/notes";
-      let fetchedNotes: Note[] = [];
+        if (viewMode === "archived") {
+          const res = await fetch(`${base}?archived=true&deleted=false&limit=50`);
+          const data = await res.json();
+          if (!isActive) return;
+          fetchedNotes = data.notes ?? [];
+        }
 
+        else if (viewMode === "favorites") {
+          const favBase = `${base}?favorite=true&deleted=false&limit=50`;
+          const [a, b] = await Promise.all([
+            fetch(`${favBase}&archived=true`),
+            fetch(`${favBase}&archived=false`)
+          ]);
+          const [ad, bd] = await Promise.all([a.json(), b.json()]);
+          if (!isActive) return;
 
-      // view archived
+          const merged = [...(ad.notes ?? []), ...(bd.notes ?? [])];
+          fetchedNotes = Array.from(new Map(merged.map(n => [n.id, n])).values());
 
-      if (viewMode === "archived") {
-        const res = await fetch(`${base}?archived=true&deleted=false&limit=10`);
-        const data = await res.json();
-        if (!isActive) return;
-        fetchedNotes = data.notes ?? [];
-      }
+          fetchedNotes.sort((x, y) =>
+            new Date(y.updatedAt || y.createdAt).getTime() -
+            new Date(x.updatedAt || x.createdAt).getTime()
+          );
+        }
 
+        else if (viewMode === "trash") {
+          const res = await fetch(`${base}?deleted=true&limit=50`);
+          const data = await res.json();
+          if (!isActive) return;
+          fetchedNotes = data.notes ?? [];
+        }
 
-      // VIEW: FAVORITES (archived true + false)
+        else if (folderId) {
+          const res = await fetch(`${base}?folderId=${folderId}&limit=50`);
+          const data = await res.json();
+          if (!isActive) return;
+          fetchedNotes = data.notes ?? [];
+        }
 
-      else if (viewMode === "favorites") {
-        const favBase = `${base}?favorite=true&deleted=false&limit=10`;
-
-        const [archTrueRes, archFalseRes] = await Promise.all([
-          fetch(`${favBase}&archived=true`),
-          fetch(`${favBase}&archived=false`)
-        ]);
-
-        const [archTrueData, archFalseData] = await Promise.all([
-          archTrueRes.json(),
-          archFalseRes.json()
-        ]);
-
-        if (!isActive) return;
-
-        const notesTrue: Note[] = archTrueData.notes ?? [];
-        const notesFalse: Note[] = archFalseData.notes ?? [];
-
-        // Merge + remove duplicates
-        fetchedNotes = Array.from(
-          new Map([...notesTrue, ...notesFalse].map(n => [n.id, n])).values()
-        );
-
-        // Sort by latest time
-        fetchedNotes.sort((a, b) =>
-          new Date(b.updatedAt || b.createdAt).getTime() -
-          new Date(a.updatedAt || a.createdAt).getTime()
-        );
-      }
-
-
-      // VIEW: TRASH
-
-      else if (viewMode === "trash") {
-        const res = await fetch(`${base}?deleted=true&limit=30`);
-        const data = await res.json();
-        if (!isActive) return;
-        fetchedNotes = data.notes ?? [];
-      }
-
-
-      // VIEW: FOLDER
-
-      else if (folderId) {
-        const res = await fetch(`${base}?folderId=${folderId}&limit=10`);
-        const data = await res.json();
-        if (!isActive) return;
-        fetchedNotes = data.notes ?? [];
-      }
-
-      
-      // NO VIEW
-   
-      else {
-        if (isActive) {
+        else {
           setNotes([]);
-          setLoading(false);
+          return;
         }
-        return;
-      }
 
- 
-      // FINAL FILTERING
-  
-      const filteredNotes =
-        viewMode === "archived"
-          ? fetchedNotes.filter(n => n.isArchived && !n.deletedAt)
-          : viewMode === "favorites"
-            ? fetchedNotes.filter(n => n.isFavorite && !n.deletedAt)
-            : viewMode === "trash"
-              ? fetchedNotes.filter(n => n.deletedAt != null)
-              : folderId
-                ? fetchedNotes.filter(n => n.folderId === folderId && !n.isArchived && !n.deletedAt)
-                : [];
+        const filteredNotes =
+          viewMode === "archived"
+            ? fetchedNotes.filter(n => n.isArchived && !n.deletedAt)
+            : viewMode === "favorites"
+              ? fetchedNotes.filter(n => n.isFavorite && !n.deletedAt)
+              : viewMode === "trash"
+                ? fetchedNotes.filter(n => n.deletedAt != null)
+                : folderId
+                  ? fetchedNotes.filter(n => n.folderId === folderId && !n.isArchived && !n.deletedAt)
+                  : [];
 
-      setNotes(filteredNotes);
+        setNotes(filteredNotes);
 
-      // Folder Name (Folder View)
-    
-      if (viewMode === "folder" && folderId) {
-        if (filteredNotes.length > 0) {
-          setFolderName(filteredNotes[0].folder.name);
-        } else {
-          const folderRes = await fetch(`https://nowted-server.remotestate.com/folders`);
-          const folderData = await folderRes.json();
-          const currentFolder = folderData.folders.find((f: Folder) => f.id === folderId);
-          setFolderName(currentFolder?.name || "");
+        if (viewMode === "folder" && folderId) {
+          if (filteredNotes.length > 0) {
+            setFolderName(filteredNotes[0].folder.name);
+          } else {
+            const folderRes = await fetch(`https://nowted-server.remotestate.com/folders`);
+            const folderData = await folderRes.json();
+            const current = folderData.folders.find((f: Folder) => f.id === folderId);
+            setFolderName(current?.name || "");
+          }
         }
+
+      } catch (e) {
+        console.error(e);
+        setNotes([]);
+      } finally {
+        if (isActive) setLoading(false);
       }
+    };
 
-    } catch (error) {
-      console.error("Error fetching notes:", error);
-      if (isActive) setNotes([]);
-    } finally {
-      if (isActive) setLoading(false);
-    }
-  };
+    fetchNotes();
+    return () => { isActive = false; };
+  }, [routeFolderId, noteId, refreshKey, viewMode, refresh]);
 
-  fetchNotes();
+  // reset visible items when new notes load
+  useEffect(() => {
+    setVisibleCount(LIMIT);
+  }, [notes]);
 
-  return () => {
-    isActive = false;
-  };
-}, [routeFolderId, noteId, refreshKey, viewMode, refresh]);
+  // intersection observer
+  const lastNoteRef = useCallback((node: HTMLDivElement | null) => {
+    if (loading || isLoadingMore) return;
+
+    if (observerRef.current) observerRef.current.disconnect();
+
+    observerRef.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && visibleCount < notes.length) {
+        setIsLoadingMore(true);
+        setTimeout(() => {
+          setVisibleCount(prev => prev + LIMIT);
+          setIsLoadingMore(false);
+        }, 800);
+      }
+    });
+
+    if (node) observerRef.current.observe(node);
+  }, [loading, isLoadingMore, visibleCount, notes.length]);
 
   useEffect(() => {
     setSelectedNote(noteId || null);
   }, [noteId]);
 
-  const pageTitle = isArchivedView
-    ? "Archived Notes"
-    : isFavoriteView
-      ? "Favorite Notes"
-      : isTrashView
-        ? "Trash"
-        : folderName || "Folder Notes";
+  const pageTitle =
+    isArchivedView ? "Archived Notes" :
+      isFavoriteView ? "Favorite Notes" :
+        isTrashView ? "Trash" :
+          folderName || "Folder Notes";
+
 
   return (
-    <div className="p-5 h-full bg-panel text-main flex flex-col gap-5">
-      <div className="text-[22px] font-semibold text-main shrink-0 break-words whitespace-normal">{pageTitle}</div>
+    <div className="p-5 h-screen bg-panel text-main flex flex-col gap-5">
+      <div className="text-[22px] font-semibold shrink-0">{pageTitle}</div>
+
       {loading ? (
-        // Show loader while loading
         <Loader />
       ) : notes.length === 0 ? (
         <div className="text-muted flex-1 flex items-center justify-center">No Notes</div>
       ) : (
-        <div className="flex-1 overflow-y-auto flex flex-col gap-5 pr-4">
-          {notes.map(note => {
+        <div className="flex-1 overflow-y-auto  overflow-x-visible flex flex-col gap-5 pr-4 pt-4 custom-scroll">
+          {notes.slice(0, visibleCount).map((note, index, arr) => {
+            const isLast = index === arr.length - 1;
+
             return (
               <div
                 key={note.id}
+                ref={isLast ? lastNoteRef : null}
                 onClick={() => {
-                  setSelectedNote(note.id)
+                  setSelectedNote(note.id);
                   if (isArchivedView) navigate(`/archived/notes/${note.id}`);
                   else if (isFavoriteView) navigate(`/favorites/notes/${note.id}`);
                   else if (isTrashView) navigate(`/trash/notes/${note.id}`);
                   else navigate(`/folders/${note.folderId}/notes/${note.id}`);
                 }}
                 className={`rounded p-5 cursor-pointer transition-all duration-200
-  ${selectedNote === note.id
+                  ${selectedNote === note.id
                     ? "shadow-[0_0_15px_3px_rgba(59,130,246,0.5)] border-l-4 border-blue-500"
                     : "bg-card hover:bg-hover border-l-4 border-transparent"
-                  } ${notes[0].id === note.id ? "mt-1" : ""}`}
+                  }`}
               >
-                <div className="text-[18px] font-semibold text-main break-words whitespace-normal overflow-hidden">
+                <div className="text-[18px] font-semibold break-words whitespace-normal overflow-hidden">
                   {note.title || "Untitled"}
                 </div>
                 <div className="flex gap-[10px] text-muted text-sm">
@@ -234,14 +224,14 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
               </div>
             );
           })}
+
+          {isLoadingMore && (
+            <div className="py-4 text-center text-muted">Loading...</div>
+          )}
         </div>
       )}
     </div>
   );
 };
 
-export default React.memo(Middle, (prevProps, nextProps) => {
-  // Only re-render if refreshKey changes
-  return prevProps.refreshKey === nextProps.refreshKey;
-});
-
+export default React.memo(Middle, (prev, next) => prev.refreshKey === next.refreshKey);
