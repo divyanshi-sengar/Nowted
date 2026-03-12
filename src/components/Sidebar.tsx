@@ -45,6 +45,28 @@ interface RecentNote {
     name: string;
   };
 }
+// api response type
+
+interface FoldersResponse {
+  folders: Folder[];
+}
+
+
+interface RecentNotesResponse {
+  recentNotes: RecentNote[];
+}
+
+interface CreateNoteResponse {
+  id: string;
+  folderId: string;
+  title: string;
+  content: string;
+  isFavorite: boolean;
+  isArchived: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 
 const Sidebar: React.FC = () => {
   const [folderName, setFolderName] = useState("");
@@ -78,7 +100,11 @@ const Sidebar: React.FC = () => {
   // Get Current Folder Id
   const getCurrentFolderId = () => {
     const match = location.pathname.match(/\/folders\/([^/]+)/);
-    return match ? match[1] : null;
+    if (match) {
+      return match[1];
+    } else {
+      return null;
+    }
   };
 
   // Add Note
@@ -107,7 +133,7 @@ const Sidebar: React.FC = () => {
 
       if (!response.ok) throw new Error();
 
-      const data = await response.json();
+      const data:CreateNoteResponse = await response.json();
 
       toast.success("New note created");
       navigate(`/folders/${currentFolderId}/notes/${data.id}`);
@@ -160,7 +186,7 @@ const Sidebar: React.FC = () => {
         const response = await fetch("https://nowted-server.remotestate.com/folders");
         if (!response.ok) throw new Error();
 
-        const data = await response.json();
+        const data :FoldersResponse= await response.json();
         setFolder(data.folders || []);
 
         toast.success("Folders loaded");
@@ -183,7 +209,7 @@ const Sidebar: React.FC = () => {
         const response = await fetch("https://nowted-server.remotestate.com/notes/recent");
         if (!response.ok) throw new Error();
 
-        const data = await response.json();
+        const data :RecentNotesResponse= await response.json();
         setrecent(data.recentNotes);
 
       } catch (err) {
@@ -278,7 +304,7 @@ const Sidebar: React.FC = () => {
       const response = await fetch("https://nowted-server.remotestate.com/folders");
       if (!response.ok) throw new Error();
 
-      const data = await response.json();
+      const data :FoldersResponse= await response.json();
       setFolder(data.folders);
 
       toast.success(`Folder "${folderName}" created`);
@@ -336,7 +362,7 @@ const Sidebar: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h2 className="text-main font-normal text-[26px] font-[Kaushan_Script]">Nowted</h2>
-            <img src={pen} alt="" className="h-[15px] relative -mt-3 icon-theme" />
+            <img src={pen} alt="" className="h-3.75 relative -mt-3 icon-theme" />
             <div
               onClick={toggleTheme}
               title="Toggle theme"

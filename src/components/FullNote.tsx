@@ -31,10 +31,19 @@ interface Note {
   deletedAt?: string | null;
 }
 
+interface GetNoteResponse {
+  note: Note;
+}
+
 interface Folder {
   id: string;
   name: string;
 }
+
+interface GetFoldersResponse {
+  folders: Folder[];
+}
+
 
 interface FullNoteProps {
   setRefreshKey: React.Dispatch<React.SetStateAction<number>>;
@@ -92,7 +101,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
     const getFolders = async () => {
       try {
         const response = await fetch("https://nowted-server.remotestate.com/folders");
-        const data = await response.json();
+        const data :GetFoldersResponse= await response.json();
         setFolder(data.folders);
       } catch (err) {
         console.log(err);
@@ -115,7 +124,7 @@ const FullNote: React.FC<FullNoteProps> = ({ setRefreshKey }) => {
     const fetchNote = async () => {
       try {
         const res = await fetch(`https://nowted-server.remotestate.com/notes/${noteId}`);
-        const data: { note: Note } = await res.json();
+        const data: GetNoteResponse = await res.json();
         setNote(data.note);
       } catch (err) {
         console.error("Error fetching note:", err);

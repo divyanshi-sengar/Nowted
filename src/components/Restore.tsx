@@ -61,7 +61,7 @@ const Restore: React.FC = () => {
 
       toggleRefresh();
 
-      // ✅ Show toast first
+      //  Show toast first
       toast.success(`"${note.title}" restored successfully`, {
         autoClose: 2000,
         onClose: () => navigate(`/folders/${note.folder.id}`)

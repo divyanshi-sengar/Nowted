@@ -23,6 +23,17 @@ interface Note {
   updatedAt?: string;
 }
 
+interface GetNoteResponse {
+  note: Note;
+}
+
+interface GetNotesResponse {
+  notes: Note[] | null;
+}
+
+interface GetFoldersResponse {
+  folders: Folder[];
+}
 const LIMIT = 10;
 
 const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
@@ -45,12 +56,20 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
   const isFavoriteView = location.pathname.startsWith("/favorites");
   const isTrashView = location.pathname.startsWith("/trash");
 
-  const viewMode =
-    isArchivedView ? "archived" :
-      isFavoriteView ? "favorites" :
-        isTrashView ? "trash" :
-          "folder";
+  let viewMode;
 
+  if (isArchivedView) {
+    viewMode = "archived";
+  }
+  else if (isFavoriteView) {
+    viewMode = "favorites";
+  }
+  else if (isTrashView) {
+    viewMode = "trash";
+  }
+  else {
+    viewMode = "folder";
+  }
   // fetch notes
   useEffect(() => {
     let isActive = true;
@@ -62,7 +81,7 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
 
         if (!folderId && noteId) {
           const noteRes = await fetch(`https://nowted-server.remotestate.com/notes/${noteId}`);
-          const noteData = await noteRes.json();
+          const noteData:GetNoteResponse = await noteRes.json();
           folderId = noteData.note.folder.id;
         }
 
@@ -70,19 +89,23 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
         let fetchedNotes: Note[] = [];
 
         if (viewMode === "archived") {
-          const res = await fetch(`${base}?archived=true&deleted=false&limit=50`);
-          const data = await res.json();
+          const res = await fetch(`${base}?archived=true&deleted=false&limit=all`);
+          const data:GetNotesResponse = await res.json();
           if (!isActive) return;
-          fetchedNotes = data.notes ?? [];
+          if (data.notes !== null && data.notes !== undefined) {
+            fetchedNotes = data.notes;
+          } else {
+            fetchedNotes = [];
+          }
         }
 
         else if (viewMode === "favorites") {
-          const favBase = `${base}?favorite=true&deleted=false&limit=50`;
+          const favBase = `${base}?favorite=true&deleted=false&limit=all`;
           const [a, b] = await Promise.all([
             fetch(`${favBase}&archived=true`),
             fetch(`${favBase}&archived=false`)
           ]);
-          const [ad, bd] = await Promise.all([a.json(), b.json()]);
+          const [ad, bd]:[GetNotesResponse,GetNotesResponse] = await Promise.all([a.json(), b.json()]);
           if (!isActive) return;
 
           const merged = [...(ad.notes ?? []), ...(bd.notes ?? [])];
@@ -95,17 +118,21 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
         }
 
         else if (viewMode === "trash") {
-          const res = await fetch(`${base}?deleted=true&limit=50`);
-          const data = await res.json();
+          const res = await fetch(`${base}?deleted=true&limit=all`);
+          const data:GetNotesResponse = await res.json();
           if (!isActive) return;
           fetchedNotes = data.notes ?? [];
         }
 
         else if (folderId) {
-          const res = await fetch(`${base}?folderId=${folderId}&limit=50`);
+          const res = await fetch(`${base}?folderId=${folderId}&limit=all`);
           const data = await res.json();
           if (!isActive) return;
-          fetchedNotes = data.notes ?? [];
+          if (data.notes === null || data.notes === undefined) {
+            fetchedNotes = [];
+          } else {
+            fetchedNotes = data.notes;
+          }
         }
 
         else {
@@ -131,7 +158,7 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
             setFolderName(filteredNotes[0].folder.name);
           } else {
             const folderRes = await fetch(`https://nowted-server.remotestate.com/folders`);
-            const folderData = await folderRes.json();
+            const folderData :GetFoldersResponse= await folderRes.json();
             const current = folderData.folders.find((f: Folder) => f.id === folderId);
             setFolderName(current?.name || "");
           }
@@ -186,7 +213,7 @@ const Middle: React.FC<MiddleProps> = ({ refreshKey }) => {
 
   return (
     <div className="p-5 h-screen bg-panel text-main flex flex-col gap-5">
-      <div className="text-[22px] font-semibold shrink-0">{pageTitle}</div>
+      <div className="text-[22px] font-semibold shrink-0 ">{pageTitle}</div>
 
       {loading ? (
         <Loader />
